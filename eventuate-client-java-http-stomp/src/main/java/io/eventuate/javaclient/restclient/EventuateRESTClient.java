@@ -23,8 +23,7 @@ import java.util.function.Supplier;
 
 public class EventuateRESTClient implements AggregateCrud {
 
-  private static
-  Logger logger = LoggerFactory.getLogger(EventuateRESTClient.class);
+  private static Logger logger = LoggerFactory.getLogger(EventuateRESTClient.class);
 
   private HttpClient httpClient;
   private final String authorizationHeader;
@@ -62,7 +61,6 @@ public class EventuateRESTClient implements AggregateCrud {
         if (throwable instanceof EventuateServiceUnavailableException) {
           vertx.setTimer(1000, event -> {
             logger.trace("Retrying");
-            System.out.println("Retrying");
             attemptOperation(asyncRequest, result);
           });
         } else
@@ -123,9 +121,9 @@ public class EventuateRESTClient implements AggregateCrud {
   private void handleErrorResponse(CompletableFuture<?> cf, HttpClientResponse response) {
     if (response.statusCode() == 500) {
       cf.completeExceptionally(new EventuateServerException());
-      response.bodyHandler(body -> {
-        System.out.println("500 response body: "+ body.toString());
-      });
+//      response.bodyHandler(body -> {
+//        System.out.println("500 response body: "+ body.toString());
+//      });
     } else if (response.statusCode() == 401)
       cf.completeExceptionally(new EventuateAuthenticationFailedException());
     else if (response.statusCode() == 503)

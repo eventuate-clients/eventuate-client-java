@@ -87,7 +87,6 @@ public class TrackingStompServer {
   }
 
   private void recordFrame(ServerFrame serverFrame) {
-    System.out.println(serverFrame.frame());
     frames.onNext(serverFrame);
   }
 

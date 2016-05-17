@@ -29,7 +29,6 @@ public class IdempotentEventHandler {
               CompletableFuture<EntityWithIdAndVersion<Account>> f = ctx.update(Account.class, details.getFromAccountId(),
                       new DebitAccountCommand(details.getAmount(), ctx.getEntityId()));
               f.handle((r, t) -> {
-                System.out.println("Second debit attempt" + ewidv + r + ", " + t);
                 if (t == null)
                   events.complete(new AsyncOutcome(ewidv, r));
                 else

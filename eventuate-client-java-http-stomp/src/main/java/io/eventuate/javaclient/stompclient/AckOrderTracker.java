@@ -31,7 +31,6 @@ public class AckOrderTracker {
       pendingHeaders.subList(0, acked.size()).clear();
       return acked;
     } else {
-      System.out.println("ERROR Didn't find " + ackHeader);
       logger.error("Didn't find " + ackHeader);
       return Collections.emptyList();
     }

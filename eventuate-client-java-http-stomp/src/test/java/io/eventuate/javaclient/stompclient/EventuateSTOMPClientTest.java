@@ -35,7 +35,6 @@ public class EventuateSTOMPClientTest {
 
   @AfterClass
   public static void afterClass() {
-    System.out.println("Closing vertx");
     if (vertx != null) vertx.close();
   }
 
@@ -65,22 +64,18 @@ public class EventuateSTOMPClientTest {
 
   private void assertDisconnected() throws InterruptedException, ExecutionException {
     for (int i = 0; i < 2000; i++) {
-      System.out.println("Testing !isConnected");
       if (!client.isConnected()) break;
       TimeUnit.MILLISECONDS.sleep(50);
     }
-    System.out.println("!isConnected");
 
     assertFalse(client.isConnected());
   }
 
   private void assertConnected() throws InterruptedException, ExecutionException {
     for (int i = 0; i < 50; i++) {
-      System.out.println("Testing isConnected");
       if (client.isConnected()) break;
       TimeUnit.MILLISECONDS.sleep(100);
     }
-    System.out.println("isConnected");
 
     assertTrue(client.isConnected());
   }
@@ -99,7 +94,6 @@ public class EventuateSTOMPClientTest {
 
     server.close();
 
-    System.out.println("server closed.. ");
 
     assertDisconnected();
 
@@ -109,11 +103,9 @@ public class EventuateSTOMPClientTest {
 
     server.assertSubscribed();
 
-    System.out.println("Closing client");
     client.close();
 
 
-    System.out.println("Exiting test");
 
   }
 
@@ -133,11 +125,6 @@ public class EventuateSTOMPClientTest {
     server.close();
     client.close();
 
-    System.out.println("server closed.. ");
-
-    System.out.println("Closing client");
-
-    System.out.println("Exiting test");
   }
 
   @Test
@@ -164,11 +151,6 @@ public class EventuateSTOMPClientTest {
 
     server.close();
 
-    System.out.println("server closed.. ");
-
-    System.out.println("Closing client");
-
-    System.out.println("Exiting test");
   }
 
 

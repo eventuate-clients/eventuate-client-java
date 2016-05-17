@@ -77,7 +77,6 @@ public class MultithreadedTest {
       try {
         startBarrier.await();
         for (int i = 0; i < loops; i++) {
-          System.out.print(idx);
           Account account = new Account();
           List<Event> accountEvents = account.process(new CreateAccountCommand(new BigDecimal(12345)));
 
@@ -114,7 +113,6 @@ public class MultithreadedTest {
           vertx.setTimer(1000, new Handler<Long>() {
             @Override
             public void handle(Long event) {
-              System.out.println("Retrying");
               attemptOperation(asyncRequest, result);
             }
           });
