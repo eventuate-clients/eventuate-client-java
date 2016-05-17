@@ -1,0 +1,7 @@
+apply plugin: PrivateModulePlugin
+
+dependencies {
+    compile project(":eventuate-client-java")
+
+    compile "com.fasterxml.jackson.core:jackson-databind:2.6.1"
+}

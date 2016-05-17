@@ -1,0 +1,15 @@
+include 'eventuate-client-java'
+include 'eventuate-client-java-spring'
+include 'eventuate-client-java-common-impl'
+include 'eventuate-client-java-event-handling'
+include 'eventuate-client-java-http-stomp'
+include 'eventuate-client-java-http-stomp-spring'
+
+include 'eventuate-client-java-jdbc'
+
+include 'eventuate-client-java-tests-example-domain'
+include 'eventuate-client-java-tests-example'
+include 'eventuate-client-java-tests'
+include 'eventuate-client-java-tests-jdbc'
+
+rootProject.name = 'eventuate-java-client'

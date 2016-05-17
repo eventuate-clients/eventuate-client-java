@@ -1,0 +1,20 @@
+apply plugin: PrivateModulePlugin
+
+dependencies {
+
+  compile project(":eventuate-client-java-common-impl")
+
+  compile 'io.vertx:vertx-core:3.2.1'
+  compile 'io.vertx:vertx-codegen:3.2.1'
+
+  compile 'io.vertx:vertx-stomp:3.2.1'
+
+  testCompile "org.everit.json:org.everit.json.schema:1.1.1"
+  testCompile "ch.qos.logback:logback-classic:1.0.13"
+  testCompile "commons-io:commons-io:2.4"
+
+  testCompile 'au.com.dius:pact-jvm-consumer-junit_2.11:3.2.4'
+  testCompile "io.reactivex:rxjava:$rxJavaVersion"
+  testCompile "io.eventuate.apispec:eventuate-api-spec:0.1"
+
+}

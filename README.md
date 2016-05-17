@@ -1,1 +1,2 @@
-Eventuate Java client
+This is the [Eventuate](http://eventuate.io) Java client
+

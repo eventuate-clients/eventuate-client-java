@@ -1,0 +1,11 @@
+{
+  "id": "000001539af9df31-0242ac1100570002",
+  "entityId": "000001539af9db21-0242ac11003d0000",
+  "entityType": "net.chrisrichardson.eventstore.client.javaintegrationtests.domain.Account",
+  "eventData": "{\"amount\":1,\"transactionId\":\"000001539af9de13-0242ac1100800000\"}",
+  "eventType": "net.chrisrichardson.eventstore.client.javaintegrationtests.domain.AccountDebitedEvent",
+  "eventToken": "blahbalh",
+  "swimlane": 2,
+  "offset": 192
+}
+
