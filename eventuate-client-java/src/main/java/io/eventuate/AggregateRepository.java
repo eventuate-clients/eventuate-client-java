@@ -9,6 +9,34 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+/**
+ * A convenience class that provides a simplified interface for creating and updating aggregates.
+ * @param <T> the aggregate class, which is a subtype of CommandProcessingAggregate
+ * @param <CT> the aggregate's command class, a subtype of command
+ *
+ * <p>For example:
+ *
+ * <pre class="code">
+ * public class AccountService {
+ *   private final AggregateRepository&gt;Account, AccountCommand&gt; accountRepository;
+ *
+ *   public AccountService(AggregateRepository&gt;Account, AccountCommand&gt; accountRepository) {
+ *     this.accountRepository = accountRepository;
+ *   }
+ *
+ *   public CompletableFuture&gt;EntityWithIdAndVersion&gt;Account&gt;&gt; openAccount(BigDecimal initialBalance) {
+ *     return accountRepository.save(new CreateAccountCommand(initialBalance));
+ *   }
+ * }
+ *</pre>
+ *
+ * @see CommandProcessingAggregate
+ * @see Command
+ *
+ *
+ */
+
+
 public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> {
 
   private static Logger logger = LoggerFactory.getLogger(AggregateRepository.class);
@@ -16,17 +44,33 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   private Class<T> clasz;
   private EventuateAggregateStore aggregateStore;
 
+  /**
+   * Constructs a new AggregateRepository for the specified aggregate class and aggregate store
+   * @param clasz the class of the aggregate
+   * @param aggregateStore the aggregate store
+   */
   public AggregateRepository(Class<T> clasz, EventuateAggregateStore aggregateStore) {
     this.clasz = clasz;
     this.aggregateStore = aggregateStore;
   }
 
-
-  public <CT2 extends CT> CompletableFuture<EntityWithIdAndVersion<T>> save(CT2 cmd) {
+  /**
+   * Create a new Aggregate by processing a command and persisting the events
+   * @param cmd the command to process
+   * @return the newly persisted aggregate
+   */
+  public CompletableFuture<EntityWithIdAndVersion<T>> save(CT cmd) {
     return save(cmd, Optional.empty());
   }
 
-  public <CT2 extends CT> CompletableFuture<EntityWithIdAndVersion<T>> save(CT2 cmd, Optional<SaveOptions> saveOptions) {
+  /**
+   *
+   * Create a new Aggregate by processing a command and persisting the events
+   * @param cmd the command to process
+   * @param saveOptions creation options
+   * @return the newly persisted aggregate
+   */
+  public CompletableFuture<EntityWithIdAndVersion<T>> save(CT cmd, Optional<SaveOptions> saveOptions) {
     T aggregate;
     try {
       aggregate = clasz.newInstance();
@@ -39,6 +83,12 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
     return aggregateStore.save(clasz, events, saveOptions).thenApply(entityIdAndVersion -> new EntityWithIdAndVersion<>(entityIdAndVersion, aggregate));
   }
 
+  /**
+   * Update the specified aggregate by processing a command and saving events
+   * @param entityId the id of the aggregate to update
+   * @param cmd the command to process
+   * @return the updated and persisted aggregate
+   */
   public CompletableFuture<EntityWithIdAndVersion<T>> update(String entityId, final CT cmd) {
     return update(entityId, cmd, Optional.empty());
   }
@@ -75,6 +125,13 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   }
 
 
+  /**
+   * Update the specified aggregate by processing a command and saving events
+   * @param entityId the id of the aggregate to update
+   * @param cmd the command to process
+   * @param updateOptions options for updating
+   * @return the updated and persisted aggregate
+   */
   public CompletableFuture<EntityWithIdAndVersion<T>> update(final String entityId, final CT cmd, Optional<UpdateOptions> updateOptions) {
 
     return withRetry( () -> {

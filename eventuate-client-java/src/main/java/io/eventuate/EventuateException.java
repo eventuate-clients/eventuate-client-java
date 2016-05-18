@@ -9,7 +9,11 @@ public class EventuateException extends RuntimeException {
     super(m);
   }
 
-  public EventuateException(String m, Exception e) {
+  public EventuateException(String m, Throwable e) {
     super(m, e);
+  }
+
+  public EventuateException(Throwable t) {
+    super(t);
   }
 }

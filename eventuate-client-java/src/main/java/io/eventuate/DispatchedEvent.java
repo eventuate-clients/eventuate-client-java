@@ -35,6 +35,7 @@ public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
     return event.getClass();
   }
 
+  @Override
   public T getEvent() {
     return event;
   }
@@ -54,6 +55,7 @@ public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
     return offset;
   }
 
+  @Override
   public EventContext getEventContext() {
     return eventContext;
   }
