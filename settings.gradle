@@ -9,6 +9,7 @@ include 'eventuate-client-java-jdbc'
 
 include 'eventuate-client-java-tests-example-domain'
 include 'eventuate-client-java-tests-example'
+include 'eventuate-client-java-tests-common'
 include 'eventuate-client-java-tests'
 include 'eventuate-client-java-tests-jdbc'
 

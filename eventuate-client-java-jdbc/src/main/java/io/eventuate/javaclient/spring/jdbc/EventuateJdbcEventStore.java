@@ -35,7 +35,7 @@ public class EventuateJdbcEventStore implements AggregateCrud, AggregateEvents {
   @Override
   public CompletableFuture<EntityIdAndVersion> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> saveOptions) {
     List<EventIdTypeAndData> eventsWithIds = events.stream().map(this::toEventWithId).collect(Collectors.toList());
-    String entityId = genId().asString();
+    String entityId = saveOptions.flatMap(SaveOptions::getEntityId).orElse(genId().asString());
 
     Int128 entityVersion = last(eventsWithIds).getId();
     jdbcTemplate.update("INSERT INTO entities (entity_type, entity_id, entity_version) VALUES (?, ?, ?)",
@@ -91,7 +91,10 @@ public class EventuateJdbcEventStore implements AggregateCrud, AggregateEvents {
         throw new DuplicateTriggeringEventException();
       }
     });
-    return CompletableFuture.completedFuture(new LoadedEvents(events.stream().map(e -> e.event).collect(Collectors.toList())));
+    if (events.isEmpty())
+      return CompletableFutureUtil.failedFuture(new EntityNotFoundException());
+    else
+      return CompletableFuture.completedFuture(new LoadedEvents(events.stream().map(e -> e.event).collect(Collectors.toList())));
   }
 
   @Override
