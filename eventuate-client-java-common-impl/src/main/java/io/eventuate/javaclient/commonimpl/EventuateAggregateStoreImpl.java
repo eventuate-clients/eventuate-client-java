@@ -14,10 +14,15 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   private AggregateCrud aggregateCrud;
   private AggregateEvents aggregateEvents;
+  private SerializedEventDeserializer serializedEventDeserializer = new DefaultSerializedEventDeserializer();
 
   public EventuateAggregateStoreImpl(AggregateCrud aggregateCrud, AggregateEvents aggregateEvents) {
     this.aggregateCrud = aggregateCrud;
     this.aggregateEvents = aggregateEvents;
+  }
+
+  public void setSerializedEventDeserializer(SerializedEventDeserializer serializedEventDeserializer) {
+    this.serializedEventDeserializer = serializedEventDeserializer;
   }
 
   @Override
@@ -89,30 +94,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   @Override
   public CompletableFuture<?> subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions subscriberOptions, Function<DispatchedEvent<Event>, CompletableFuture<?>> handler) {
-    return aggregateEvents.subscribe(subscriberId, aggregatesAndEvents, subscriberOptions, se -> handler.apply(toDispatchedEvent(se)));
+    return aggregateEvents.subscribe(subscriberId, aggregatesAndEvents, subscriberOptions,
+            se -> serializedEventDeserializer.toDispatchedEvent(se).map(handler::apply).orElse(CompletableFuture.completedFuture(null)));
   }
 
-  private DispatchedEvent<Event> toDispatchedEvent(SerializedEvent se) {
-    String eventType = se.getEventType();
-    Class<Event> eventClass = toEventClass(eventType);
-
-    Event event = JSonMapper.fromJson(se.getEventData(), eventClass);
-    return new DispatchedEvent<>(se.getEntityId(),
-            se.getId(),
-            event,
-            se.getSwimLane(),
-            se.getOffset(), se.getEventContext());
-  }
-
-  private Class<Event> toEventClass(String eventType) {
-    if ("net.chrisrichardson.eventstore.subscriptions.EndOfCurrentEventsReachedEvent".equals(eventType)) {
-      eventType = EndOfCurrentEventsReachedEvent.class.getName();
-    }
-    try {
-      return (Class<Event>) Class.forName(eventType);
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
-  }
 }
