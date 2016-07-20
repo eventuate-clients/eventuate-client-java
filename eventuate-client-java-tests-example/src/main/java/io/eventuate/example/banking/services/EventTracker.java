@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 
 public class EventTracker<T> {
 
-  private ReplaySubject<T> rs = ReplaySubject.create();
+  private ReplaySubject<T> events = ReplaySubject.create();
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   public static <T> EventTracker<T> create() {
@@ -18,12 +18,12 @@ public class EventTracker<T> {
   }
 
   public synchronized void onNext(T item) {
-    rs.onNext(item);
+    events.onNext(item);
   }
 
-  public void eventuallyContains(Predicate<T> pred) {
+  public T eventuallyContains(Predicate<T> pred) {
     try {
-      rs.timeout(30, TimeUnit.SECONDS)
+      return events.timeout(30, TimeUnit.SECONDS)
               .onErrorResumeNext(t -> Observable.error(new RuntimeException("Presumably first timeout failed", t)))
               .filter(pred::test)
               .take(1)
@@ -34,4 +34,7 @@ public class EventTracker<T> {
     }
   }
 
+  public ReplaySubject<T> getEvents() {
+    return events;
+  }
 }
