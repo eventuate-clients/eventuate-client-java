@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 public class SwimlaneDispatcher {
-  
+
   private static Logger logger = LoggerFactory.getLogger(SwimlaneDispatcher.class);
 
   private String subscriberId;
@@ -32,14 +32,18 @@ public class SwimlaneDispatcher {
     synchronized (queue) {
       QueuedEvent qe = new QueuedEvent(de, target);
       queue.add(qe);
-      logger.trace("added event to queue: {}",  swimlane);
+      logger.trace("added event to queue: {} {} {}", subscriberId, swimlane, de);
       if (running.compareAndSet(false, true)) {
-        logger.trace("Started thread: {}", swimlane);
-        executor.execute(new MyRunnable(swimlane));
+        logger.trace("Stopped - attempting to process newly queued event: {} {}", subscriberId, swimlane);
+        processNextQueuedEvent();
       } else
-        logger.trace("Not started thread: {}", swimlane);
+        logger.trace("Running - Not attempting to process newly queued event: {} {}", subscriberId, swimlane);
       return qe.future;
     }
+  }
+
+  private void processNextQueuedEvent() {
+    executor.execute(this::processQueuedEvent);
   }
 
   class QueuedEvent {
@@ -54,49 +58,42 @@ public class SwimlaneDispatcher {
   }
 
 
-  private class MyRunnable implements Runnable {
-    private Integer swimlane;
-
-    public MyRunnable(Integer swimlane) {
-      this.swimlane = swimlane;
-    }
-
-    @Override
-    public void run() {
-      logger.trace("Starting thread for {}", swimlane);
-      while (true) {
-        QueuedEvent qe = getNextEvent();
-        if (qe == null)
-          break;
-        logger.trace("Processing event for {}", swimlane);
-        qe.target.apply(qe.event).handle((success, throwable) -> {
-          if (throwable == null) {
-            logger.info("Handler succeeded");
-            boolean x = qe.future.complete(success);
-            logger.trace("Completed future success {}", x);
-          } else {
-            logger.error("handler for " + subscriberId + " for event " + qe.event + " failed: ", throwable);
-            boolean x = qe.future.completeExceptionally(throwable);
-            logger.trace("Completed future failed{}", x);
-          }
-          return null;
-        });
-      }
-      logger.trace("Exiting thread for {}", swimlane);
-    }
-
-    private QueuedEvent getNextEvent() {
-      QueuedEvent qe1 = queue.poll();
-      if (qe1 != null)
-        return qe1;
-
-      synchronized (queue) {
-        QueuedEvent qe = queue.poll();
-        if (qe == null) {
-          running.compareAndSet(true, false);
+  public void processQueuedEvent() {
+    QueuedEvent qe = getNextEvent();
+    if (qe == null)
+      logger.trace("No queued event for {} {}", subscriberId, swimlane);
+    else {
+      logger.trace("Invoking handler for event for {} {} {}", subscriberId, swimlane, qe.event);
+      qe.target.apply(qe.event).handle((success, throwable) -> {
+        if (throwable == null) {
+          logger.info("Handler succeeded for event for {} {} {}", subscriberId, swimlane, qe.event);
+          boolean x = qe.future.complete(success);
+          logger.trace("Completed future success {}", x);
+          logger.trace("Maybe processing next queued event {} {}", subscriberId, swimlane);
+          processNextQueuedEvent();
+        } else {
+          logger.error("handler for {} {}  {} failed: ", throwable, subscriberId, swimlane, qe.event);
+          boolean x = qe.future.completeExceptionally(throwable);
+          logger.trace("Completed future failed{}", x);
+          // TODO - what to do here???
         }
-        return qe;
-      }
+        return null;
+      });
     }
   }
+
+  private QueuedEvent getNextEvent() {
+    QueuedEvent qe1 = queue.poll();
+    if (qe1 != null)
+      return qe1;
+
+    synchronized (queue) {
+      QueuedEvent qe = queue.poll();
+      if (qe == null) {
+        running.compareAndSet(true, false);
+      }
+      return qe;
+    }
+  }
+
 }

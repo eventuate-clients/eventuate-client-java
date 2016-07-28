@@ -145,6 +145,9 @@ public class EventuateSTOMPClient implements AggregateEvents {
   private void handleEvent(Subscription sub, SerializedEvent serializedEvent, String ackHeader) {
     ackOrderTracker.add(ackHeader);
     vertx.executeBlocking(future -> {
+
+      logger.trace("Invoking handler for subscription {} for event {}", sub.subscriberId, serializedEvent);
+
       sub.handler.apply(serializedEvent).handle((result, e) -> {
         if (e != null) {
           future.fail(e);
@@ -155,14 +158,17 @@ public class EventuateSTOMPClient implements AggregateEvents {
       });
     }, false, result -> {
       if (result.failed()) {
-        result.cause().printStackTrace();
+        // TODO - what else to do here???
+        logger.error("Failed handler for subscription {} for event {}", result.cause(), sub.subscriberId, serializedEvent);
       } else {
+        logger.trace("Successfully completed handler for subscription {} for event {}", sub.subscriberId, serializedEvent);
         context.runOnContext(ignored -> {
           for (String ah : ackOrderTracker.ack(ackHeader)) {
             if (logger.isTraceEnabled())
               logger.trace("Sending acknowledgement: " + ah);
             state.connection.ack(ah);
           }
+          logger.trace("Pending ack headers {} {}", sub.subscriberId, ackOrderTracker.getPendingHeaders());
         });
       }
     });

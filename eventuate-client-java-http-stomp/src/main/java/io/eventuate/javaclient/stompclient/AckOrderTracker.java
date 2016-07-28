@@ -2,6 +2,7 @@ package io.eventuate.javaclient.stompclient;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,9 +37,18 @@ public class AckOrderTracker {
     }
   }
 
-  private class PendingAckHeader {
+  public List<PendingAckHeader> getPendingHeaders() {
+    return pendingHeaders;
+  }
+
+  public class PendingAckHeader {
     private String ackHeader;
     private boolean acked;
+
+    @Override
+    public String toString() {
+      return ToStringBuilder.reflectionToString(this);
+    }
 
     public PendingAckHeader(String ackHeader) {
       this.ackHeader = ackHeader;
