@@ -3,10 +3,12 @@ package io.eventuate.javaclient.spring.httpstomp;
 import io.eventuate.javaclient.commonimpl.EventuateAggregateStoreImpl;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.EventuateAggregateStore;
+import io.eventuate.javaclient.commonimpl.SerializedEventDeserializer;
 import io.eventuate.javaclient.restclient.EventuateRESTClient;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.stompclient.EventuateSTOMPClient;
 import io.vertx.core.Vertx;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,9 +20,17 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(EventuateHttpStompClientConfigurationProperties.class)
 public class EventuateHttpStompClientConfiguration {
 
+  @Autowired(required=false)
+  private SerializedEventDeserializer serializedEventDeserializer;
+
   @Bean
   public EventuateAggregateStore httpStompEventStore(AggregateCrud restClient, AggregateEvents stompClient) {
-    return new EventuateAggregateStoreImpl(restClient, stompClient);
+    EventuateAggregateStoreImpl eventuateAggregateStore = new EventuateAggregateStoreImpl(restClient, stompClient);
+
+    if (serializedEventDeserializer != null)
+      eventuateAggregateStore.setSerializedEventDeserializer(serializedEventDeserializer);
+
+    return eventuateAggregateStore;
   }
 
   @Bean
