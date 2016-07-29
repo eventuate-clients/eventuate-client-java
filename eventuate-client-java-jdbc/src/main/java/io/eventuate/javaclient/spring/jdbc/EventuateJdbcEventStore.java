@@ -29,7 +29,7 @@ public class EventuateJdbcEventStore implements AggregateCrud, AggregateEvents {
   private AtomicLong idGenerator = new AtomicLong(0);
 
   private Int128 genId() {
-    return new Int128(0, idGenerator.incrementAndGet());
+    return new Int128(System.currentTimeMillis(), idGenerator.incrementAndGet());
   }
 
   @Override

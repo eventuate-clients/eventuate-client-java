@@ -72,7 +72,7 @@ public class SwimlaneDispatcher {
           logger.trace("Maybe processing next queued event {} {}", subscriberId, swimlane);
           processNextQueuedEvent();
         } else {
-          logger.error("handler for {} {}  {} failed: ", throwable, subscriberId, swimlane, qe.event);
+          logger.error(String.format("handler for %s %s  %s failed: ", subscriberId, swimlane, qe.event), throwable);
           boolean x = qe.future.completeExceptionally(throwable);
           logger.trace("Completed future failed{}", x);
           // TODO - what to do here???
