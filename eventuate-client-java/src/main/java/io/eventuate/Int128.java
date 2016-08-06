@@ -44,4 +44,8 @@ public class Int128 {
     return new Int128(Long.parseLong(s[0], 16), Long.parseLong(s[1], 16));
   }
 
+  public int compareTo(Int128 other) {
+    int x = Long.compare(hi, other.hi);
+    return x == 0 ? Long.compare(lo, other.lo) : x;
+  }
 }

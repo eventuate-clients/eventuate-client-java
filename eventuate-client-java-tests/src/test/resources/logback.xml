@@ -18,6 +18,4 @@
     </logger>
     <logger name="io.netty" level='trace'>
     </logger>
-    <logger name="net.chrisrichardson.eventstore.client.javaintegrationtests" level='debug'>
-    </logger>
 </configuration>
