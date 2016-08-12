@@ -1,23 +1,20 @@
 package io.eventuate.javaclient.stompclient;
 
 
+import io.eventuate.Int128;
 import io.vertx.core.Vertx;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.*;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class EventuateSTOMPClientTest {
 
@@ -26,6 +23,12 @@ public class EventuateSTOMPClientTest {
   private EventuateCredentials credentials = new EventuateCredentials("x", "y", "default");
   private static Vertx vertx;
   private static int port;
+  private BlockingQueue<Int128> ids;
+
+  @Before
+  public void setUp() {
+    ids = new LinkedBlockingDeque<>();
+  }
 
   @BeforeClass
   public static void beforeClass() throws IOException {
@@ -50,7 +53,10 @@ public class EventuateSTOMPClientTest {
     client.subscribe("MySubId",
             Collections.singletonMap("MyEntityType",
                     Collections.singleton("MyEvent")),
-            null, se -> CompletableFuture.completedFuture("x"));
+            null, se -> {
+              ids.add(se.getId());
+              return CompletableFuture.completedFuture("x");
+            });
   }
 
   private void makeServer() {
@@ -92,6 +98,18 @@ public class EventuateSTOMPClientTest {
 
     server.assertSubscribed();
 
+    List<Int128> receivedIds = new ArrayList<>();
+
+    while (receivedIds.size() != 500) {
+      Int128 x = ids.poll(20, TimeUnit.SECONDS);
+      assertNotNull(x);
+      receivedIds.add(x);
+    }
+
+    List<Int128> sorted = new ArrayList<>(receivedIds);
+    sorted.sort((o1, o2) -> o1.asString().compareTo(o2.asString()));
+
+    assertEquals(sorted, receivedIds);
     server.close();
 
 

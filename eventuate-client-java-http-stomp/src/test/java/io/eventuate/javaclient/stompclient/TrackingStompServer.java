@@ -4,6 +4,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.stomp.*;
@@ -75,7 +76,10 @@ public class TrackingStompServer {
       messageHeaders.put(Frame.SUBSCRIPTION, serverFrame.frame().getId());
       messageHeaders.put(Frame.MESSAGE_ID, Integer.toString(messageIdCounter++));
       messageHeaders.put(Frame.ACK, Integer.toString(messageIdCounter++));
-      serverFrame.connection().write(new Frame(Frame.Command.MESSAGE, messageHeaders, Buffer.buffer("{}")));
+      JsonObject body = new JsonObject();
+      body.put("id", "0-" + i);
+      String encode = body.encode();
+      serverFrame.connection().write(new Frame(Frame.Command.MESSAGE, messageHeaders, Buffer.buffer(encode)));
     }
     // }
   }
