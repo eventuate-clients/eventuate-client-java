@@ -41,7 +41,7 @@ public class Int128 {
     String[] s = str.split("-");
     if (s.length != 2)
       throw new IllegalArgumentException("Should have length of 2: " + str);
-    return new Int128(Long.parseLong(s[0], 16), Long.parseLong(s[1], 16));
+    return new Int128(Long.parseUnsignedLong(s[0], 16), Long.parseUnsignedLong(s[1], 16));
   }
 
   public int compareTo(Int128 other) {

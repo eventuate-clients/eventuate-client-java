@@ -11,6 +11,8 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
+import javax.sql.DataSource;
+
 /**
  * Defines the Spring beans for the embedded, JDBC-based event store
  */
@@ -19,10 +21,14 @@ public class EventuateJdbcEventStoreConfiguration {
 
   @Bean
   public EventuateJdbcEventStore eventuateJdbcEventStore() {
-    EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
-    EmbeddedDatabase db = builder.setType(EmbeddedDatabaseType.H2).addScript("embedded-event-store-schema.sql").build();
-    JdbcTemplate jdbcTemplate = new JdbcTemplate(db);
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource());
     return new EventuateJdbcEventStore(jdbcTemplate);
+  }
+
+  @Bean
+  public DataSource dataSource() {
+    EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
+    return builder.setType(EmbeddedDatabaseType.H2).addScript("embedded-event-store-schema.sql").build();
   }
 
   @Bean
