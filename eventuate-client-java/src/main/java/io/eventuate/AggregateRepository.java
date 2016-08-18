@@ -105,18 +105,21 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   private <T> CompletableFuture<T> withRetry(Supplier<CompletableFuture<T>> asyncRequest) {
     CompletableFuture<T> result = new CompletableFuture<>();
-    attemptOperation(asyncRequest, result);
+    attemptOperation(asyncRequest, result, 0);
     return result;
   }
 
-  private <T> void attemptOperation(Supplier<CompletableFuture<T>> asyncRequest, CompletableFuture<T> result) {
+  private <T> void attemptOperation(Supplier<CompletableFuture<T>> asyncRequest, CompletableFuture<T> result, int attempt) {
     CompletableFuture<T> f = asyncRequest.get();
     f.handleAsync((val, throwable) -> {
       if (throwable != null) {
-        if (CompletableFutureUtil.unwrap(throwable) instanceof OptimisticLockingException) {
-          attemptOperation(asyncRequest, result);
-        } else
+        if (attempt < 10 && CompletableFutureUtil.unwrap(throwable) instanceof OptimisticLockingException) {
+          logger.debug("got optimistic locking exception - retrying", throwable);
+          attemptOperation(asyncRequest, result, attempt + 1);
+        } else {
+          logger.error("got exception - NOT retrying: " + attempt, throwable);
           result.completeExceptionally(throwable);
+        }
       }
       else
         result.complete(val);

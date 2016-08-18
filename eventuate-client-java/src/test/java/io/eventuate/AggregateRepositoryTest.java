@@ -135,8 +135,9 @@ public class AggregateRepositoryTest {
             debitedEvents, Optional.empty()))
             .thenReturn(CompletableFuture.completedFuture(new EntityIdAndVersion(entityId, updatedTwiceEntityVersion)));
 
-    EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
-            new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), Optional.empty()).get();
+    CompletableFuture<EntityWithIdAndVersion<Account>> updateF = repository.update(entityId,
+            new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), Optional.empty());
+    EntityWithIdAndVersion<Account> ewidv = updateF.get();
 
     assertEquals(entityId, ewidv.getEntityIdAndVersion().getEntityId());
     assertEquals(updatedTwiceEntityVersion, ewidv.getEntityIdAndVersion().getEntityVersion());

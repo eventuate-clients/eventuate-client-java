@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Transactional
 public class EventuateJdbcEventStore extends AbstractEventuateJdbcAggregateStore
         implements AggregateCrud, AggregateEvents {
 

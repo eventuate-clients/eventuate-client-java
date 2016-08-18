@@ -5,19 +5,11 @@ import io.eventuate.javaclient.commonimpl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCrud {
@@ -34,6 +26,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
   private IdGenerator idGenerator = new IdGeneratorImpl();
 
   @Override
+  @Transactional
   public CompletableFuture<EntityIdAndVersion> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> saveOptions) {
     List<EventIdTypeAndData> eventsWithIds = events.stream().map(this::toEventWithId).collect(Collectors.toList());
     String entityId = saveOptions.flatMap(SaveOptions::getEntityId).orElse(idGenerator.genId().asString());
@@ -75,6 +68,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
   }
 
   @Override
+  @Transactional
   public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<FindOptions> findOptions) {
     List<EventAndTrigger> events = jdbcTemplate.query(
             "SELECT * FROM events where entity_type = ? and entity_id = ? order by event_id asc",
@@ -88,11 +82,12 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
             }, aggregateType, entityId
     );
     logger.debug("Loaded {} events", events);
-    findOptions.flatMap(FindOptions::getTriggeringEvent).ifPresent(te -> {
-      if (events.stream().map(e -> e.triggeringEvent).anyMatch(pe -> te.getEventToken().equals(pe))) {
-        throw new DuplicateTriggeringEventException();
-      }
-    });
+    Optional<EventAndTrigger> matching = findOptions.
+            flatMap(FindOptions::getTriggeringEvent).
+            flatMap(te -> events.stream().filter(e -> te.getEventToken().equals(e.triggeringEvent)).findAny());
+    if (matching.isPresent()) {
+      return CompletableFutureUtil.failedFuture(new DuplicateTriggeringEventException());
+    }
     if (events.isEmpty())
       return CompletableFutureUtil.failedFuture(new EntityNotFoundException());
     else
@@ -100,6 +95,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
   }
 
   @Override
+  @Transactional
   public CompletableFuture<EntityIdAndVersion> update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
     List<EventIdTypeAndData> eventsWithIds = events.stream().map(this::toEventWithId).collect(Collectors.toList());
 
@@ -117,7 +113,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
 
     if (count != 1) {
       logger.error("Failed to update entity: {}", count);
-      throw new OptimisticLockingException();
+      return CompletableFutureUtil.failedFuture(new OptimisticLockingException(entityIdAndType, entityVersion));
     }
 
     for (EventIdTypeAndData event : eventsWithIds)

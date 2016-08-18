@@ -101,7 +101,7 @@ public class EventuateRESTClient implements AggregateCrud {
                       }
                     });
                   else {
-                    handleErrorResponse(cf, response);
+                    handleErrorResponse(cf, response, new EntityIdAndType(null, aggregateType), null);
                   }
 
                 })
@@ -118,7 +118,7 @@ public class EventuateRESTClient implements AggregateCrud {
     return StringUtils.isBlank(credentials.getSpace()) ? "/entity/default" : "/entity/" + credentials.getSpace();
   }
 
-  private void handleErrorResponse(CompletableFuture<?> cf, HttpClientResponse response) {
+  private void handleErrorResponse(CompletableFuture<?> cf, HttpClientResponse response, EntityIdAndType entityIdAndType, Int128 entityVersion) {
     if (response.statusCode() == 500) {
       cf.completeExceptionally(new EventuateServerException());
 //      response.bodyHandler(body -> {
@@ -135,7 +135,7 @@ public class EventuateRESTClient implements AggregateCrud {
         if ("entity_exists".equals(errorCode)) {
           cf.completeExceptionally(new EntityAlreadyExistsException());
         } else if ("optimistic_lock_error".equals(errorCode)) {
-          cf.completeExceptionally(new OptimisticLockingException());
+          cf.completeExceptionally(new OptimisticLockingException(entityIdAndType, entityVersion));
         } else if ("duplicate_event".equals(errorCode)) {
           cf.completeExceptionally(new DuplicateTriggeringEventException());
         } else if ("entity_temporarily_unavailable".equals(errorCode)) {
@@ -149,11 +149,11 @@ public class EventuateRESTClient implements AggregateCrud {
   }
 
   @Override
-  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String name, String entityId, Optional<FindOptions> findOptions) {
+  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<FindOptions> findOptions) {
     return withRetry(() -> {
       CompletableFuture<LoadedEvents> cf = new CompletableFuture<>();
       context.runOnContext(ignore -> {
-        httpClient.get(makePath() + "/" + name + "/" + entityId + makeGetQueryString(findOptions.flatMap(FindOptions::getTriggeringEvent)))
+        httpClient.get(makePath() + "/" + aggregateType + "/" + entityId + makeGetQueryString(findOptions.flatMap(FindOptions::getTriggeringEvent)))
                 .handler(response -> {
                   if (response.statusCode() == 200) {
                     response.bodyHandler(body -> {
@@ -168,7 +168,7 @@ public class EventuateRESTClient implements AggregateCrud {
                       }
                     });
                   } else {
-                    handleErrorResponse(cf, response);
+                    handleErrorResponse(cf, response, new EntityIdAndType(entityId, aggregateType), null);
                   }
                 })
                 .putHeader("authorization", authorizationHeader)
@@ -212,7 +212,7 @@ public class EventuateRESTClient implements AggregateCrud {
                       }
                     });
                   else {
-                    handleErrorResponse(cf, response);
+                    handleErrorResponse(cf, response, aggregateIdAndType, entityVersion);
                   }
 
                 })
