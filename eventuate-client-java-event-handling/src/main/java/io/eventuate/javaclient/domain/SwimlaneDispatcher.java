@@ -66,7 +66,7 @@ public class SwimlaneDispatcher {
       logger.trace("Invoking handler for event for {} {} {}", subscriberId, swimlane, qe.event);
       qe.target.apply(qe.event).handle((success, throwable) -> {
         if (throwable == null) {
-          logger.info("Handler succeeded for event for {} {} {}", subscriberId, swimlane, qe.event);
+          logger.debug("Handler succeeded for event for {} {} {}", subscriberId, swimlane, qe.event);
           boolean x = qe.future.complete(success);
           logger.trace("Completed future success {}", x);
           logger.trace("Maybe processing next queued event {} {}", subscriberId, swimlane);

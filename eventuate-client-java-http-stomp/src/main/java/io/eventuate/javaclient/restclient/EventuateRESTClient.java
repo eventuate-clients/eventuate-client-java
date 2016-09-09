@@ -73,12 +73,12 @@ public class EventuateRESTClient implements AggregateCrud {
   }
 
   @Override
-  public CompletableFuture<EntityIdAndVersion> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> options) {
+  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> options) {
     return withRetry(() -> {
       if (logger.isDebugEnabled())
-        logger.info("save: " + aggregateType + ", events" + events);
+        logger.debug("save: " + aggregateType + ", events" + events);
 
-      CompletableFuture<EntityIdAndVersion> cf = new CompletableFuture<>();
+      CompletableFuture<EntityIdVersionAndEventIds> cf = new CompletableFuture<>();
 
       CreateEntityRequest request = new CreateEntityRequest(aggregateType, events);
       options.flatMap(SaveOptions::getEntityId).ifPresent(request::setEntityId);
@@ -95,7 +95,7 @@ public class EventuateRESTClient implements AggregateCrud {
                     response.bodyHandler(body -> {
                       try {
                         CreateEntityResponse r = JSonMapper.fromJson(body.toString(), CreateEntityResponse.class);
-                        cf.complete(new EntityIdAndVersion(r.getEntityId(), r.getEntityVersion()));
+                        cf.complete(new EntityIdVersionAndEventIds(r.getEntityId(), r.getEntityVersion(), r.getEventIds()));
                       } catch (Throwable e) {
                         cf.completeExceptionally(e);
                       }
@@ -186,12 +186,12 @@ public class EventuateRESTClient implements AggregateCrud {
 
 
   @Override
-  public CompletableFuture<EntityIdAndVersion> update(EntityIdAndType aggregateIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
+  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType aggregateIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
     return withRetry(() -> {
       if (logger.isDebugEnabled())
-        logger.info("update: " + aggregateIdAndType.getEntityType() + ", " + aggregateIdAndType.getEntityId() + ", " + ", events" + events + ", " + updateOptions);
+        logger.debug("update: " + aggregateIdAndType.getEntityType() + ", " + aggregateIdAndType.getEntityId() + ", " + ", events" + events + ", " + updateOptions);
 
-      CompletableFuture<EntityIdAndVersion> cf = new CompletableFuture<>();
+      CompletableFuture<EntityIdVersionAndEventIds> cf = new CompletableFuture<>();
 
       UpdateEntityRequest request = new UpdateEntityRequest(events, entityVersion,
               updateOptions.flatMap(UpdateOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
@@ -206,7 +206,7 @@ public class EventuateRESTClient implements AggregateCrud {
                     response.bodyHandler(body -> {
                       try {
                         UpdateEntityResponse r = JSonMapper.fromJson(body.toString(), UpdateEntityResponse.class);
-                        cf.complete(new EntityIdAndVersion(r.getEntityId(), r.getEntityVersion()));
+                        cf.complete(new EntityIdVersionAndEventIds(r.getEntityId(), r.getEntityVersion(), r.getEventIds()));
                       } catch (Throwable e) {
                         cf.completeExceptionally(e);
                       }

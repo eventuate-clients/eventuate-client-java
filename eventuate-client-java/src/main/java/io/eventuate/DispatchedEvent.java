@@ -31,8 +31,8 @@ public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
   }
 
   @Override
-  public Class<?> getEventType() {
-    return event.getClass();
+  public Class<T> getEventType() {
+    return (Class<T>) event.getClass();
   }
 
   @Override

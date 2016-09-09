@@ -1,9 +1,9 @@
 package io.eventuate.javaclient.restclient;
 
 import io.eventuate.EntityIdAndType;
-import io.eventuate.EntityIdAndVersion;
 import io.eventuate.Int128;
 import io.eventuate.OptimisticLockingException;
+import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
 import io.eventuate.javaclient.stompclient.EventuateCredentials;
@@ -73,7 +73,7 @@ public class EventuateRESTClientTest {
     mockHttpServer.expect().respondingWith(409, RequestResponseJsonObjects.makeOptimisticLockingErrorResponse());
 
 
-    CompletableFuture<EntityIdAndVersion> f = client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
+    CompletableFuture<EntityIdVersionAndEventIds> f = client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
     try {

@@ -1,10 +1,7 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventuateAggregateStore;
-import io.eventuate.javaclient.domain.EventHandlerProcessor;
-import io.eventuate.javaclient.domain.EventHandlerProcessorDispatchedEventReturningVoid;
-import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningCompletableFuture;
-import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningVoid;
+import io.eventuate.javaclient.domain.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,8 +19,13 @@ public class EventuateJavaClientDomainConfiguration {
   }
 
   @Bean
-  public EventDispatcherInitializer eventDispatcherInitializer(EventHandlerProcessor[] processors, EventuateAggregateStore aggregateStore) {
-    return new EventDispatcherInitializer(processors, aggregateStore, Executors.newCachedThreadPool());
+  public EventDispatcherInitializer eventDispatcherInitializer(EventHandlerProcessor[] processors, EventuateAggregateStore aggregateStore, SubscriptionsRegistry subscriptionsRegistry) {
+    return new EventDispatcherInitializer(processors, aggregateStore, Executors.newCachedThreadPool(), subscriptionsRegistry);
+  }
+
+  @Bean
+  public SubscriptionsRegistry subscriptionsRegistry() {
+    return new SubscriptionsRegistry();
   }
 
   @Bean
@@ -34,6 +36,11 @@ public class EventuateJavaClientDomainConfiguration {
   @Bean
   public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningVoid(EventuateAggregateStore aggregateStore) {
     return new EventHandlerProcessorDispatchedEventReturningVoid();
+  }
+
+  @Bean
+  public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningCompletableFuture(EventuateAggregateStore aggregateStore) {
+    return new EventHandlerProcessorDispatchedEventReturningCompletableFuture();
   }
   @Bean
   public EventHandlerProcessor eventHandlerProcessorEventHandlerContextReturningCompletableFuture(EventuateAggregateStore aggregateStore) {

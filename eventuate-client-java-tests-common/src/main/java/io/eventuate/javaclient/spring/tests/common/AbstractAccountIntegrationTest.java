@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+import static io.eventuate.testutil.AsyncUtil.await;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractAccountIntegrationTest {
@@ -39,9 +40,9 @@ public abstract class AbstractAccountIntegrationTest {
     List<Event> accountEvents = account.process(new CreateAccountCommand(new BigDecimal(12345)));
 
 
-    EntityIdAndVersion accountEntity = aggregateStore.save(Account.class, accountEvents, Optional.empty()).get();
+    EntityIdAndVersion accountEntity = await(aggregateStore.save(Account.class, accountEvents, Optional.empty()));
 
-    logger.info("Looking for event: " + accountEntity.getEntityVersion().asString());
+    logger.debug("Looking for event: " + accountEntity.getEntityVersion().asString());
 
     accountCommandSideEventHandler.getEvents().eventuallyContains(ctx -> ctx.getEventId().equals(accountEntity.getEntityVersion()));
 
@@ -51,14 +52,14 @@ public abstract class AbstractAccountIntegrationTest {
     MoneyTransfer moneyTransfer = new MoneyTransfer();
     List<Event> moneyTransferEvents = moneyTransfer.process(new CreateMoneyTransferCommand(new TransferDetails(accountEntity.getEntityId(), accountEntity.getEntityId(), new BigDecimal(1))));
 
-    EntityIdAndVersion moneyTransferEntity = aggregateStore.save(MoneyTransfer.class, moneyTransferEvents, Optional.empty()).get();
+    EntityIdAndVersion moneyTransferEntity = await(aggregateStore.save(MoneyTransfer.class, moneyTransferEvents, Optional.empty()));
 
-    logger.info("Looking for MoneyTransferCreatedEvent: " + moneyTransferEntity.getEntityVersion());
+    logger.debug("Looking for MoneyTransferCreatedEvent: " + moneyTransferEntity.getEntityVersion());
 
     moneyTransferCommandSideEventHandler.getEvents().eventuallyContains(
             ctx -> ctx.getEventId().equals(moneyTransferEntity.getEntityVersion()));
 
-    logger.info("Looking for AccountDebitedEvent with this transaction id: " + moneyTransferEntity.getEntityId());
+    logger.debug("Looking for AccountDebitedEvent with this transaction id: " + moneyTransferEntity.getEntityId());
 
     moneyTransferCommandSideEventHandler.getEvents().eventuallyContains(
             ctx -> AccountDebitedEvent.class.isInstance(ctx.getEvent()) && moneyTransferEntity.getEntityId().equals(((AccountDebitedEvent) ctx.getEvent()).getTransactionId()));
@@ -76,10 +77,10 @@ public abstract class AbstractAccountIntegrationTest {
 
     String accountId = "unique-account-id-" + UUID.randomUUID().toString();
 
-    EntityIdAndVersion accountEntity = aggregateStore.save(Account.class, accountEvents, Optional.of(new SaveOptions().withId(Optional.of(accountId)))).get();
+    EntityIdAndVersion accountEntity = await(aggregateStore.save(Account.class, accountEvents, Optional.of(new SaveOptions().withId(Optional.of(accountId)))));
 
     Class<Account> accountClass = Account.class;
-    EntityWithMetadata<Account> loadedEntity = aggregateStore.find(accountClass, accountId).get();
+    EntityWithMetadata<Account> loadedEntity = await(aggregateStore.find(accountClass, accountId));
     assertEquals(accountEntity.getEntityVersion(), loadedEntity.getEntityIdAndVersion().getEntityVersion());
   }
 
@@ -88,11 +89,7 @@ public abstract class AbstractAccountIntegrationTest {
 
     String accountId = "unique-account-id-" + UUID.randomUUID().toString();
     Class<Account> accountClass = Account.class;
-    try {
-      aggregateStore.find(accountClass, accountId).get();
-    } catch (ExecutionException e) {
-      throw e.getCause();
-    }
+    await(aggregateStore.find(accountClass, accountId));
   }
 
   <T> void eventuallyContains(Observable<T> obs, Predicate<T> pred) {

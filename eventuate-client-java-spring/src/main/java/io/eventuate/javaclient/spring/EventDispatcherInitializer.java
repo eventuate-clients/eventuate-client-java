@@ -19,14 +19,17 @@ public class EventDispatcherInitializer {
   private EventHandlerProcessor[] processors;
   private EventuateAggregateStore aggregateStore;
   private Executor executorService;
+  private SubscriptionsRegistry subscriptionsRegistry;
 
   private Set<String> subscriberIds = new HashSet<>();
 
-  public EventDispatcherInitializer(EventHandlerProcessor[] processors, EventuateAggregateStore aggregateStore, Executor executorService) {
+  public EventDispatcherInitializer(EventHandlerProcessor[] processors, EventuateAggregateStore aggregateStore, Executor executorService, SubscriptionsRegistry subscriptionsRegistry) {
     this.processors = processors;
     this.aggregateStore = aggregateStore;
     this.executorService = executorService;
+    this.subscriptionsRegistry = subscriptionsRegistry;
   }
+
 
   public void registerEventHandler(Object eventHandlerBean, String beanName) {
 
@@ -62,6 +65,7 @@ public class EventDispatcherInitializer {
     try {
       aggregateStore.subscribe(subscriberId, aggregatesAndEvents,
               subscriberOptions, de -> swimlaneBasedDispatcher.dispatch(de, eventDispatcher::dispatch)).get(20, TimeUnit.SECONDS);
+      subscriptionsRegistry.add(new RegisteredSubscription(subscriberId, aggregatesAndEvents, eventHandlerBean.getClass()));
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
       throw new EventuateSubscriptionFailedException(subscriberId, e);
     }

@@ -25,7 +25,7 @@ public class IdGeneratorImpl implements IdGenerator {
         NetworkInterface iface = ifaces.nextElement();
         if (iface.getHardwareAddress() != null) {
           macAddress = toLong(iface.getHardwareAddress());
-          logger.info("Mac address {}", macAddress);
+          logger.debug("Mac address {}", macAddress);
           break;
         }
       }

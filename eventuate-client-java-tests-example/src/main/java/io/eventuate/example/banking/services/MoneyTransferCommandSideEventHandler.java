@@ -23,19 +23,19 @@ public class MoneyTransferCommandSideEventHandler {
 
   @EventHandlerMethod
   public void moneyTransferCreated(EventHandlerContext<MoneyTransferCreatedEvent> ctx) {
-    logger.info("moneyTransferCreated got event {}", ctx.getEventId());
+    logger.debug("moneyTransferCreated got event {}", ctx.getEventId());
     events.onNext(ctx);
   }
 
   @EventHandlerMethod
   public void doAnything(EventHandlerContext<AccountDebitedEvent> ctx) {
-    logger.info("doAnything got event {} {}", ctx.getEventId(), ctx.getEvent().getTransactionId());
+    logger.debug("doAnything got event {} {}", ctx.getEventId(), ctx.getEvent().getTransactionId());
     events.onNext(ctx);
   }
 
   @EventHandlerMethod
   public void noteProgress(EventHandlerContext<EndOfCurrentEventsReachedEvent> ctx) {
-    logger.info("noteProgress got event: " + ctx.getEvent());
+    logger.debug("noteProgress got event: " + ctx.getEvent());
     events.onNext(ctx);
   }
 

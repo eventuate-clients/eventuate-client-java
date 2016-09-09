@@ -17,4 +17,7 @@ include 'eventuate-client-java-tests-common'
 include 'eventuate-client-java-tests'
 include 'eventuate-client-java-tests-jdbc'
 
+include 'eventuate-client-java-test-util'
+include 'eventuate-client-java-spring-test-util'
+
 rootProject.name = 'eventuate-java-client'

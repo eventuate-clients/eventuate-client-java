@@ -44,7 +44,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
     this.port = uri.getPort();
     this.useSsl = uri.getScheme().startsWith("stomp+ssl");
     if (logger.isInfoEnabled())
-      logger.info("STOMP connection: " + Arrays.asList(host, port, useSsl));
+      logger.debug("STOMP connection: " + Arrays.asList(host, port, useSsl));
   }
 
   public void initialize() {
@@ -73,11 +73,11 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
     stompClient.closeHandler(this::handleClose);
 
-    logger.info("Connecting...");
+    logger.debug("Connecting...");
 
     stompClient.connect(x -> {
       if (x.succeeded()) {
-        logger.info("Connected!");
+        logger.debug("Connected!");
         handleConnectSucceeded(x.result());
       } else {
         logger.error("Connect attempt failed", x.cause());
@@ -92,7 +92,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
       vertx.setTimer(1000, timerX -> {
         if (state.status == ConnectionStatus.CONNECTION_FAILED_WAITING_TO_RETRY) {
           state.status = ConnectionStatus.CONNECTING;
-          logger.info("Attempting to connecting...");
+          logger.debug("Attempting to connecting...");
           initialize();
         }
       });
@@ -102,7 +102,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
   public void handleClose(Void x) {
     if (state.status != ConnectionStatus.CLOSED) {
-      logger.info("Reconnecting...");
+      logger.debug("Reconnecting...");
       state.status = ConnectionStatus.CONNECTING;
       initialize();
     }
@@ -277,7 +277,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
   private void doSubscribe(Subscription sub) {
     if (logger.isInfoEnabled())
-      logger.info("subscribing  ... " + sub.subscriberId);
+      logger.debug("subscribing  ... " + sub.subscriberId);
 
     Map<String, String> headers = new HashMap<>();
     headers.put(Frame.ID, sub.uniqueId);
@@ -286,7 +286,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
     state.connection.subscribe(destination, headers,
             frame -> frameHandler(frame, sub), rh -> {
               if (logger.isInfoEnabled())
-                logger.info("Subscribed: " + sub.subscriberId);
+                logger.debug("Subscribed: " + sub.subscriberId);
               if (!sub.getSubscribeCompletedFuture().isDone())
                 sub.getSubscribeCompletedFuture().complete(null);
             });

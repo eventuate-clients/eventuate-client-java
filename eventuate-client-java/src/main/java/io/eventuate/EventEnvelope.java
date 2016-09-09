@@ -25,7 +25,7 @@ public interface EventEnvelope<T extends Event> {
    * @return the event type
    */
 
-  Class<?> getEventType();
+  Class<T> getEventType();
 
   /**
    * The id of the aggregate that published the event

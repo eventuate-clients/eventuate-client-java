@@ -29,7 +29,7 @@ public class AccountCommandSideEventHandler {
   @EventHandlerMethod
   public CompletableFuture<?> debitAccount(EventHandlerContext<MoneyTransferCreatedEvent> ctx) {
     events.onNext(ctx);
-    logger.info("debiting account");
+    logger.debug("debiting account");
     TransferDetails details = ctx.getEvent().getDetails();
     return ctx.update(Account.class, details.getFromAccountId(),
             new DebitAccountCommand(details.getAmount(), ctx.getEntityId()));

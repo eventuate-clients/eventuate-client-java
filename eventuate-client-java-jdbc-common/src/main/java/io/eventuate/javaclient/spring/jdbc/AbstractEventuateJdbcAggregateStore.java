@@ -4,6 +4,7 @@ import io.eventuate.*;
 import io.eventuate.javaclient.commonimpl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +28,18 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
 
   @Override
   @Transactional
-  public CompletableFuture<EntityIdAndVersion> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> saveOptions) {
+  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> saveOptions) {
     List<EventIdTypeAndData> eventsWithIds = events.stream().map(this::toEventWithId).collect(Collectors.toList());
     String entityId = saveOptions.flatMap(SaveOptions::getEntityId).orElse(idGenerator.genId().asString());
 
     Int128 entityVersion = last(eventsWithIds).getId();
 
-    jdbcTemplate.update("INSERT INTO entities (entity_type, entity_id, entity_version) VALUES (?, ?, ?)",
-            aggregateType, entityId, entityVersion.asString());
+    try {
+      jdbcTemplate.update("INSERT INTO entities (entity_type, entity_id, entity_version) VALUES (?, ?, ?)",
+              aggregateType, entityId, entityVersion.asString());
+    } catch (DuplicateKeyException e) {
+      return CompletableFutureUtil.failedFuture(new EntityAlreadyExistsException());
+    }
 
 
     for (EventIdTypeAndData event : eventsWithIds)
@@ -43,7 +48,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
               saveOptions.flatMap(SaveOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
 
     publish(aggregateType, entityId, eventsWithIds);
-    return CompletableFuture.completedFuture(new EntityIdAndVersion(entityId, entityVersion));
+    return CompletableFuture.completedFuture(new EntityIdVersionAndEventIds(entityId, entityVersion, eventsWithIds.stream().map(EventIdTypeAndData::getId).collect(Collectors.toList())));
   }
 
 
@@ -96,7 +101,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
 
   @Override
   @Transactional
-  public CompletableFuture<EntityIdAndVersion> update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
+  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
     List<EventIdTypeAndData> eventsWithIds = events.stream().map(this::toEventWithId).collect(Collectors.toList());
 
     String entityType = entityIdAndType.getEntityType();
@@ -127,7 +132,9 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
 
     publish(entityIdAndType.getEntityType(), entityId, eventsWithIds);
 
-    return CompletableFuture.completedFuture(new EntityIdAndVersion(entityId, entityVersion));
+    return CompletableFuture.completedFuture(new EntityIdVersionAndEventIds(entityId,
+            entityVersion,
+            eventsWithIds.stream().map(EventIdTypeAndData::getId).collect(Collectors.toList())));
 
   }
 

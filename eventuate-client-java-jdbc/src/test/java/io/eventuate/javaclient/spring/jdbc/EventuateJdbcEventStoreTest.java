@@ -2,6 +2,7 @@ package io.eventuate.javaclient.spring.jdbc;
 
 import io.eventuate.*;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
+import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
 import org.junit.Test;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static io.eventuate.testutil.AsyncUtil.await;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -34,19 +36,19 @@ public class EventuateJdbcEventStoreTest {
 
   @Test
   public void findShouldCompleteWithDuplicateTriggeringEventException() throws ExecutionException, InterruptedException {
-    EntityIdAndVersion eidv = eventStore.save(aggregateType,
+    EntityIdVersionAndEventIds eidv = await(eventStore.save(aggregateType,
             Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
-            Optional.of(new SaveOptions().withEventContext(ectx))).get();
+            Optional.of(new SaveOptions().withEventContext(ectx))));
     CompletableFuture<LoadedEvents> c = eventStore.find(aggregateType, eidv.getEntityId(), Optional.of(new FindOptions().withTriggeringEvent(ectx)));
     shouldCompletedExceptionally(c, DuplicateTriggeringEventException.class);
   }
 
   @Test
   public void updateShouldCompleteWithOptimisticLockingException() throws ExecutionException, InterruptedException {
-    EntityIdAndVersion eidv = eventStore.save(aggregateType,
+    EntityIdVersionAndEventIds eidv = await(eventStore.save(aggregateType,
             Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
-            Optional.of(new SaveOptions().withEventContext(ectx))).get();
-    CompletableFuture<EntityIdAndVersion> c = eventStore.update(new EntityIdAndType(eidv.getEntityId(), aggregateType),
+            Optional.of(new SaveOptions().withEventContext(ectx))));
+    CompletableFuture<EntityIdVersionAndEventIds> c = eventStore.update(new EntityIdAndType(eidv.getEntityId(), aggregateType),
             new Int128(0,0), Collections.singletonList(new EventTypeAndData("MyEventType", "{}")), Optional.of(new UpdateOptions()));
     shouldCompletedExceptionally(c, OptimisticLockingException.class);
   }

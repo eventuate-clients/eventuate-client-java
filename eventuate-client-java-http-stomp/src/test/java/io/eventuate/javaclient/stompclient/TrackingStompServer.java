@@ -69,7 +69,7 @@ public class TrackingStompServer {
     receiptHeaders.put(Frame.RECEIPT_ID, serverFrame.frame().getReceipt());
     serverFrame.connection().write(new Frame(Frame.Command.RECEIPT, receiptHeaders, null));
 
-    logger.info("Sending message");
+    logger.debug("Sending message");
     for (int i = 0; i < 500; i++) {
 
       Map<String, String> messageHeaders = new HashMap<>();

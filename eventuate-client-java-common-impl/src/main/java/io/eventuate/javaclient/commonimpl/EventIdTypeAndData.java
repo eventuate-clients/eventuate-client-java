@@ -3,6 +3,7 @@ package io.eventuate.javaclient.commonimpl;
 import io.eventuate.Int128;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class EventIdTypeAndData {
 
@@ -17,6 +18,11 @@ public class EventIdTypeAndData {
     this.id = id;
     this.eventType = eventType;
     this.eventData = eventData;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this);
   }
 
   @Override

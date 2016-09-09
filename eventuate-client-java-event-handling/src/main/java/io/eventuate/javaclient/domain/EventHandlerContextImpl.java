@@ -4,6 +4,7 @@ import io.eventuate.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 class EventHandlerContextImpl implements EventHandlerContext<Event> {
   private EventuateAggregateStore aggregateStore;
@@ -26,7 +27,7 @@ class EventHandlerContextImpl implements EventHandlerContext<Event> {
   }
 
   @Override
-  public Class<?> getEventType() {
+  public Class<Event> getEventType() {
     return de.getEventType();
   }
 
@@ -60,5 +61,12 @@ class EventHandlerContextImpl implements EventHandlerContext<Event> {
   public <U extends CommandProcessingAggregate<U, CT>, CT extends Command> CompletableFuture<EntityWithIdAndVersion<U>> update(Class<U> entityClass, String entityId, CT command) {
     AggregateRepository<U, CT> ar = new AggregateRepository<>(entityClass, aggregateStore);
     return ar.update(entityId, command, Optional.of(new UpdateOptions().withTriggeringEvent(de.getEventContext())));
+  }
+
+  @Override
+  public <A extends CommandProcessingAggregate<A, CT>, CT extends Command> CompletableFuture<EntityWithIdAndVersion<A>>
+    updateWithProvidedCommand(Class<A> entityClass, String entityId, Function<A, Optional<CT>> commandProvider) {
+      AggregateRepository<A, CT> ar = new AggregateRepository<>(entityClass, aggregateStore);
+      return ar.updateWithProvidedCommand(entityId, commandProvider, Optional.of(new UpdateOptions().withTriggeringEvent(de.getEventContext())));
   }
 }

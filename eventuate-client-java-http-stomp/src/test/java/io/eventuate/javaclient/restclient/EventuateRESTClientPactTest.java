@@ -6,6 +6,7 @@ import au.com.dius.pact.consumer.PactVerification;
 import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
 import au.com.dius.pact.model.PactFragment;
 import io.eventuate.*;
+import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventIdTypeAndData;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
@@ -254,7 +255,7 @@ public class EventuateRESTClientPactTest {
             .toFragment();
   }
 
-  private CompletableFuture<EntityIdAndVersion> save() {
+  private CompletableFuture<EntityIdVersionAndEventIds> save() {
     return client.save(RequestResponseJsonObjects.aggregateType, Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
   }
 
@@ -262,7 +263,7 @@ public class EventuateRESTClientPactTest {
   @PactVerification(fragment="create")
   public void shouldCreate() throws URISyntaxException, ExecutionException, InterruptedException {
 
-  EntityIdAndVersion saveResult = save().get();
+  EntityIdVersionAndEventIds saveResult = save().get();
 
     assertEquals(RequestResponseJsonObjects.ENTITY_ID, saveResult.getEntityId());
     assertEquals(new Int128(1,2), saveResult.getEntityVersion());
@@ -275,7 +276,7 @@ public class EventuateRESTClientPactTest {
   @PactVerification(fragment="update")
   public void shouldUpdate() throws URISyntaxException, ExecutionException, InterruptedException {
 
-    EntityIdAndVersion updateResult = update().get();
+    EntityIdVersionAndEventIds updateResult = update().get();
 
     assertEquals(RequestResponseJsonObjects.ENTITY_ID, updateResult.getEntityId());
     assertEquals(new Int128(1,2), updateResult.getEntityVersion());
@@ -284,7 +285,7 @@ public class EventuateRESTClientPactTest {
 
   }
 
-  private CompletableFuture<EntityIdAndVersion> update() {
+  private CompletableFuture<EntityIdVersionAndEventIds> update() {
     return client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
@@ -335,7 +336,7 @@ public class EventuateRESTClientPactTest {
   @PactVerification(fragment="createWithId")
   public void shouldCreateWithId() throws URISyntaxException, ExecutionException, InterruptedException {
 
-    EntityIdAndVersion saveResult = saveWithId().get();
+    EntityIdVersionAndEventIds saveResult = saveWithId().get();
 
     assertEquals(RequestResponseJsonObjects.createId, saveResult.getEntityId());
     assertEquals(new Int128(1,2), saveResult.getEntityVersion());
@@ -344,7 +345,7 @@ public class EventuateRESTClientPactTest {
 
   }
 
-  private CompletableFuture<EntityIdAndVersion> saveWithId() {
+  private CompletableFuture<EntityIdVersionAndEventIds> saveWithId() {
     return client.save(RequestResponseJsonObjects.aggregateType,
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)),
             Optional.of(new SaveOptions().withId(RequestResponseJsonObjects.createId)));
@@ -395,7 +396,7 @@ public class EventuateRESTClientPactTest {
   @PactVerification(fragment="updateWithTriggeringEvent")
   public void shouldUpdateWithTriggeringEvent() throws URISyntaxException, ExecutionException, InterruptedException {
 
-    EntityIdAndVersion updateResult = updateWithEventContext().get();
+    EntityIdVersionAndEventIds updateResult = updateWithEventContext().get();
 
     assertEquals(RequestResponseJsonObjects.ENTITY_ID, updateResult.getEntityId());
     assertEquals(new Int128(1,2), updateResult.getEntityVersion());
@@ -404,7 +405,7 @@ public class EventuateRESTClientPactTest {
 
   }
 
-  private CompletableFuture<EntityIdAndVersion> updateWithEventContext() {
+  private CompletableFuture<EntityIdVersionAndEventIds> updateWithEventContext() {
     return client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)),

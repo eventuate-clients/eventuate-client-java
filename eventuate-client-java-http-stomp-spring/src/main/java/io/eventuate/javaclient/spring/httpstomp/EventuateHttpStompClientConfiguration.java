@@ -15,6 +15,9 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Defines the Spring beans to connect to an Eventuate server
+ *
+ * @deprecated  use {@link io.eventuate.javaclient.driver.EventuateDriverConfiguration} instead
+ * @see io.eventuate.javaclient.driver.EventuateDriverConfiguration
  */
 @Configuration
 @EnableConfigurationProperties(EventuateHttpStompClientConfigurationProperties.class)

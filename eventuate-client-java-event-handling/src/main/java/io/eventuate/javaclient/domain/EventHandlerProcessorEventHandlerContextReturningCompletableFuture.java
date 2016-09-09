@@ -1,9 +1,6 @@
 package io.eventuate.javaclient.domain;
 
-import io.eventuate.DispatchedEvent;
-import io.eventuate.Event;
-import io.eventuate.EventHandlerContext;
-import io.eventuate.EventuateAggregateStore;
+import io.eventuate.*;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
@@ -23,24 +20,7 @@ public class EventHandlerProcessorEventHandlerContextReturningCompletableFuture 
 
   @Override
   public EventHandler process(Object eventHandler, Method method) {
-    return new EventHandler() {
-      @Override
-      public Class<Event> getEventType() {
-        return EventHandlerProcessorUtil.getEventClass(method);
-      }
-
-      @Override
-      public CompletableFuture<?> dispatch(DispatchedEvent<Event> de) {
-        try {
-          return (CompletableFuture<?>) method.invoke(eventHandler, new EventHandlerContextImpl(aggregateStore, de));
-        } catch (Throwable e) {
-          CompletableFuture<Void> cf = new CompletableFuture<>();
-          e.printStackTrace();
-          cf.completeExceptionally(e);
-          return cf;
-        }
-      }
-    };
+    return new EventHandlerContextReturningCompletableFuture(aggregateStore, method, eventHandler);
   }
 
 }
