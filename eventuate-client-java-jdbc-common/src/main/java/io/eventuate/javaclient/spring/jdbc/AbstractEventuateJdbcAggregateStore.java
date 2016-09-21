@@ -133,7 +133,7 @@ public abstract class AbstractEventuateJdbcAggregateStore implements AggregateCr
     publish(entityIdAndType.getEntityType(), entityId, eventsWithIds);
 
     return CompletableFuture.completedFuture(new EntityIdVersionAndEventIds(entityId,
-            entityVersion,
+            updatedEntityVersion,
             eventsWithIds.stream().map(EventIdTypeAndData::getId).collect(Collectors.toList())));
 
   }
