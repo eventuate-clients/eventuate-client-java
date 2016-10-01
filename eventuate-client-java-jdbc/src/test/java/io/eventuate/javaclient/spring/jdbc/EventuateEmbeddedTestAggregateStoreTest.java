@@ -24,9 +24,9 @@ import static io.eventuate.testutil.AsyncUtil.await;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = EventuateJdbcEventStoreTest.EventuateJdbcEventStoreTestConfiguration.class)
+@SpringApplicationConfiguration(classes = EventuateEmbeddedTestAggregateStoreTest.EventuateJdbcEventStoreTestConfiguration.class)
 @IntegrationTest
-public class EventuateJdbcEventStoreTest {
+public class EventuateEmbeddedTestAggregateStoreTest {
 
   private final EventContext ectx = new EventContext("MyEventToken");
   private final String aggregateType = "MyAggregateType";

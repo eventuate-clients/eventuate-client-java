@@ -1,27 +1,29 @@
 package io.eventuate.javaclient.spring.jdbc;
 
-import io.eventuate.*;
-import io.eventuate.javaclient.commonimpl.*;
-import io.eventuate.DuplicateTriggeringEventException;
-import io.eventuate.OptimisticLockingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.eventuate.EventContext;
+import io.eventuate.SubscriberOptions;
+import io.eventuate.javaclient.commonimpl.sync.AggregateCrud;
+import io.eventuate.javaclient.commonimpl.sync.AggregateEvents;
+import io.eventuate.javaclient.commonimpl.EventIdTypeAndData;
+import io.eventuate.javaclient.commonimpl.SerializedEvent;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class EventuateJdbcEventStore extends AbstractEventuateJdbcAggregateStore
+public class EventuateEmbeddedTestAggregateStore extends AbstractEventuateJdbcAggregateStore
         implements AggregateCrud, AggregateEvents {
 
-
   private AtomicLong eventOffset = new AtomicLong();
+  private final Map<String, List<Subscription>> aggregateTypeToSubscription = new HashMap<>();
 
-  public EventuateJdbcEventStore(JdbcTemplate jdbcTemplate) {
+  public EventuateEmbeddedTestAggregateStore(JdbcTemplate jdbcTemplate) {
     super(jdbcTemplate);
   }
 
@@ -42,7 +44,6 @@ public class EventuateJdbcEventStore extends AbstractEventuateJdbcAggregateStore
 
   }
 
-  private final Map<String, List<Subscription>> aggregateTypeToSubscription = new HashMap<>();
 
   class Subscription {
 
@@ -63,7 +64,7 @@ public class EventuateJdbcEventStore extends AbstractEventuateJdbcAggregateStore
   }
 
   @Override
-  public CompletableFuture<?> subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions options, Function<SerializedEvent, CompletableFuture<?>> handler) {
+  public void subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions options, Function<SerializedEvent, CompletableFuture<?>> handler) {
     // TODO handle options
     Subscription subscription = new Subscription(subscriberId, aggregatesAndEvents, handler);
     synchronized (aggregateTypeToSubscription) {
@@ -76,7 +77,6 @@ public class EventuateJdbcEventStore extends AbstractEventuateJdbcAggregateStore
         existing.add(subscription);
       }
     }
-    return CompletableFuture.completedFuture(null);
   }
 
 }

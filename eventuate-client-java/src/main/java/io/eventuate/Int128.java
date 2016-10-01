@@ -48,4 +48,12 @@ public class Int128 {
     int x = Long.compare(hi, other.hi);
     return x == 0 ? Long.compare(lo, other.lo) : x;
   }
+
+  public long getHi() {
+    return hi;
+  }
+
+  public long getLo() {
+    return lo;
+  }
 }

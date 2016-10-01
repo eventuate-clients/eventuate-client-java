@@ -1,7 +1,17 @@
 package io.eventuate.javaclient.spring.tests.common;
 
-import io.eventuate.*;
-import io.eventuate.example.banking.domain.*;
+import io.eventuate.Aggregate;
+import io.eventuate.EntityIdAndVersion;
+import io.eventuate.EntityNotFoundException;
+import io.eventuate.EntityWithMetadata;
+import io.eventuate.Event;
+import io.eventuate.SaveOptions;
+import io.eventuate.example.banking.domain.Account;
+import io.eventuate.example.banking.domain.AccountDebitedEvent;
+import io.eventuate.example.banking.domain.CreateAccountCommand;
+import io.eventuate.example.banking.domain.CreateMoneyTransferCommand;
+import io.eventuate.example.banking.domain.MoneyTransfer;
+import io.eventuate.example.banking.domain.TransferDetails;
 import io.eventuate.example.banking.services.AccountCommandSideEventHandler;
 import io.eventuate.example.banking.services.AccountQuerySideEventHandler;
 import io.eventuate.example.banking.services.MoneyTransferCommandSideEventHandler;
@@ -9,7 +19,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import rx.Observable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,15 +26,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
-import static io.eventuate.testutil.AsyncUtil.await;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractAccountIntegrationTest {
   private Logger logger = LoggerFactory.getLogger(getClass());
-  @Autowired
-  private EventuateAggregateStore aggregateStore;
   @Autowired
   private AccountCommandSideEventHandler accountCommandSideEventHandler;
   @Autowired
@@ -40,7 +45,7 @@ public abstract class AbstractAccountIntegrationTest {
     List<Event> accountEvents = account.process(new CreateAccountCommand(new BigDecimal(12345)));
 
 
-    EntityIdAndVersion accountEntity = await(aggregateStore.save(Account.class, accountEvents, Optional.empty()));
+    EntityIdAndVersion accountEntity = save(Account.class, accountEvents, Optional.empty());
 
     logger.debug("Looking for event: " + accountEntity.getEntityVersion().asString());
 
@@ -52,7 +57,7 @@ public abstract class AbstractAccountIntegrationTest {
     MoneyTransfer moneyTransfer = new MoneyTransfer();
     List<Event> moneyTransferEvents = moneyTransfer.process(new CreateMoneyTransferCommand(new TransferDetails(accountEntity.getEntityId(), accountEntity.getEntityId(), new BigDecimal(1))));
 
-    EntityIdAndVersion moneyTransferEntity = await(aggregateStore.save(MoneyTransfer.class, moneyTransferEvents, Optional.empty()));
+    EntityIdAndVersion moneyTransferEntity = save(MoneyTransfer.class, moneyTransferEvents, Optional.empty());
 
     logger.debug("Looking for MoneyTransferCreatedEvent: " + moneyTransferEntity.getEntityVersion());
 
@@ -68,6 +73,7 @@ public abstract class AbstractAccountIntegrationTest {
 
   }
 
+
   @Test
   public void shouldCreateAccountWithId() throws ExecutionException, InterruptedException {
 
@@ -77,31 +83,24 @@ public abstract class AbstractAccountIntegrationTest {
 
     String accountId = "unique-account-id-" + UUID.randomUUID().toString();
 
-    EntityIdAndVersion accountEntity = await(aggregateStore.save(Account.class, accountEvents, Optional.of(new SaveOptions().withId(Optional.of(accountId)))));
+    EntityIdAndVersion accountEntity = save(Account.class, accountEvents, Optional.of(new SaveOptions().withId(Optional.of(accountId))));
 
     Class<Account> accountClass = Account.class;
-    EntityWithMetadata<Account> loadedEntity = await(aggregateStore.find(accountClass, accountId));
+    EntityWithMetadata<Account> loadedEntity = find(accountClass, accountId);
     assertEquals(accountEntity.getEntityVersion(), loadedEntity.getEntityIdAndVersion().getEntityVersion());
   }
+
 
   @Test(expected = EntityNotFoundException.class)
   public void shouldFailToFindNonExistentAccount() throws Throwable {
 
     String accountId = "unique-account-id-" + UUID.randomUUID().toString();
     Class<Account> accountClass = Account.class;
-    await(aggregateStore.find(accountClass, accountId));
+    find(accountClass, accountId);
   }
 
-  <T> void eventuallyContains(Observable<T> obs, Predicate<T> pred) {
-    try {
-      obs.timeout(30, TimeUnit.SECONDS)
-              .onErrorResumeNext(t -> Observable.error(new RuntimeException("Presumably first timeout failed", t)))
-              .filter(pred::test)
-              .take(1)
-              .timeout(720, TimeUnit.SECONDS).toBlocking().first();
-    } catch (Throwable t) {
-      logger.error("Failure", t);
-      throw new RuntimeException(t);
-    }
-  }
+  protected abstract <T extends Aggregate<T>> EntityIdAndVersion save(Class<T> classz, List<Event> events, Optional<SaveOptions> saveOptions);
+
+  protected abstract <T extends Aggregate<T>> EntityWithMetadata<T> find(Class<T> clasz, String entityId);
+
 }

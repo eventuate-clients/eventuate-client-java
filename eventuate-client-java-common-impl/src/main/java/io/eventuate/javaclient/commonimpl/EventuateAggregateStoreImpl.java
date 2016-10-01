@@ -138,6 +138,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   @Override
   public CompletableFuture<?> subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions subscriberOptions, Function<DispatchedEvent<Event>, CompletableFuture<?>> handler) {
+    if (activityLogger.isDebugEnabled())
+      activityLogger.debug("Subscribing {} {}", subscriberId, aggregatesAndEvents);
     CompletableFuture<?> outcome = aggregateEvents.subscribe(subscriberId, aggregatesAndEvents, subscriberOptions,
             se -> serializedEventDeserializer.toDispatchedEvent(se).map(handler::apply).orElse(CompletableFuture.completedFuture(null)));
     if (activityLogger.isDebugEnabled())

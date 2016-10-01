@@ -1,12 +1,11 @@
 package io.eventuate.javaclient.spring.httpstomp;
 
 import io.eventuate.javaclient.stompclient.EventuateCredentials;
+import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 /**
  * A Spring Boot type-safe configuration properties class for connecting to an Eventuate server.
@@ -34,10 +33,13 @@ public class EventuateHttpStompClientConfigurationProperties {
     }
   }
 
+  @NotBlank
   private String apiKeyId = null;
 
+  @NotBlank
   private String apiKeySecret = null;
 
+  @NotBlank
   private String space = "default";
 
   public String getStompServerHost() {
@@ -88,7 +90,7 @@ public class EventuateHttpStompClientConfigurationProperties {
     this.space = space;
   }
 
-  EventuateCredentials makeCredentials() {
+  public EventuateCredentials makeCredentials() {
     return new EventuateCredentials(getApiKeyId(),
             getApiKeySecret(), getSpace());
   }

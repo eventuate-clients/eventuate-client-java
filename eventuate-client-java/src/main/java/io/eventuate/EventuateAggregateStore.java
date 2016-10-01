@@ -7,8 +7,18 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+/**
+ * The reactive-style interface to the event store
+ */
 public interface EventuateAggregateStore {
 
+  /**
+   * Save an aggregate in the event store
+   * @param clasz the class of the aggregate
+   * @param events the events to save
+   * @param <T> the type of the aggregate
+   * @return the id and version of the newly saved aggregate
+   */
   <T extends Aggregate<T>> CompletableFuture<EntityIdAndVersion> save(Class<T> clasz, List<Event> events);
   <T extends Aggregate<T>> CompletableFuture<EntityIdAndVersion> save(Class<T> clasz, List<Event> events, SaveOptions saveOptions);
   <T extends Aggregate<T>> CompletableFuture<EntityIdAndVersion> save(Class<T> clasz, List<Event> events, Optional<SaveOptions> saveOptions);

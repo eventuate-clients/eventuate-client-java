@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A convenience class that provides a simplified interface for creating and updating aggregates.
+ * A convenience class, with a reactive-style API that provides a simplified interface for creating and updating aggregates.
  * @param <T> the aggregate class, which is a subtype of CommandProcessingAggregate
  * @param <CT> the aggregate's command class, a subtype of command
  *

@@ -54,9 +54,11 @@ public class IdGeneratorImpl implements IdGenerator {
 
   public Int128 genIdInternal() {
     long now = timeNow();
-    while (currentPeriod != now || counter == MAX_COUNTER) {
-      while (timeNow() <= currentPeriod) {}
-      currentPeriod = timeNow();
+    if (currentPeriod != now || counter == MAX_COUNTER) {
+      long oldPeriod = this.currentPeriod;
+      while ((this.currentPeriod = timeNow()) <= oldPeriod) {
+        // Just do nothing
+      }
       counter = 0;
     }
     Int128 id = makeId();
