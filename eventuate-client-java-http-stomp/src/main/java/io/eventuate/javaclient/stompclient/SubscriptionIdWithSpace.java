@@ -15,7 +15,6 @@ public class SubscriptionIdWithSpace {
   public SubscriptionIdWithSpace(String subscriberId, String space, Map<String, Set<String>> entityTypesAndEvents, SubscriberOptions options) {
     this.subscriberId = subscriberId;
     this.space = space;
-    this.space = null;
     this.entityTypesAndEvents = entityTypesAndEvents;
     this.options = options;
   }
