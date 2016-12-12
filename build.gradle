@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
+    }
+}
+
 plugins {
     id "com.github.hierynomus.license" version "0.12.1"
 }
@@ -16,6 +25,19 @@ projects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
+    apply plugin: 'com.jfrog.bintray'
+
+    bintray {
+        user = System.getenv('BINTRAY_USER')
+        key = System.getenv('BINTRAY_KEY')
+        configurations = ['archives']
+        pkg {
+            repo = 'eventuate-maven-release'
+            name = 'eventuate-client-java'
+            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/eventuate-clients/eventuate-client-java'
+        }
+    }
 
     repositories {
         mavenCentral()
