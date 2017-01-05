@@ -1,18 +1,32 @@
 package io.eventuate.javaclient.spring;
 
-import io.eventuate.*;
+import io.eventuate.EndOfCurrentEventsReachedEvent;
+import io.eventuate.EventHandlerMethod;
+import io.eventuate.EventSubscriber;
+import io.eventuate.EventuateAggregateStore;
 import io.eventuate.EventuateSubscriptionFailedException;
-import io.eventuate.javaclient.domain.*;
+import io.eventuate.SubscriberOptions;
+import io.eventuate.javaclient.domain.EventDispatcher;
+import io.eventuate.javaclient.domain.EventHandler;
+import io.eventuate.javaclient.domain.EventHandlerProcessor;
+import io.eventuate.javaclient.domain.SwimlaneBasedDispatcher;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
 
-import java.util.*;
+import java.lang.reflect.AccessibleObject;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class EventDispatcherInitializer {
 
@@ -33,10 +47,17 @@ public class EventDispatcherInitializer {
 
   public void registerEventHandler(Object eventHandlerBean, String beanName) {
 
-    List<EventHandler> handlers = Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(eventHandlerBean.getClass()))
-            .filter(method -> method.getAnnotation(EventHandlerMethod.class) != null)
-            .map(method -> Arrays.stream(processors).filter(processor -> processor.supports(method)).findFirst().orElseThrow(() -> new RuntimeException("Don't know what to do with method " + method))
-                    .process(eventHandlerBean, method))
+    List<AccessibleObject> fieldsAndMethods = Stream.<AccessibleObject>concat(Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(eventHandlerBean.getClass())),
+            Arrays.stream(eventHandlerBean.getClass().getDeclaredFields()))
+            .collect(Collectors.toList());
+
+    List<AccessibleObject> annotatedCandidateEventHandlers = fieldsAndMethods.stream()
+            .filter(fieldOrMethod -> AnnotationUtils.findAnnotation(fieldOrMethod, EventHandlerMethod.class) != null)
+            .collect(Collectors.toList());
+
+    List<EventHandler> handlers = annotatedCandidateEventHandlers.stream()
+            .map(fieldOrMethod -> Arrays.stream(processors).filter(processor -> processor.supports(fieldOrMethod)).findFirst().orElseThrow(() -> new RuntimeException("Don't know what to do with fieldOrMethod " + fieldOrMethod))
+                    .process(eventHandlerBean, fieldOrMethod))
             .collect(Collectors.toList());
 
     Map<String, Set<String>> aggregatesAndEvents = makeAggregatesAndEvents(handlers.stream()
@@ -48,7 +69,7 @@ public class EventDispatcherInitializer {
     if (a == null)
       throw new RuntimeException("Needs @EventSubscriber annotation: " + eventHandlerBean);
 
-    String subscriberId = StringUtils.isBlank(a.id()) ?  beanName : a.id();
+    String subscriberId = StringUtils.isBlank(a.id()) ? beanName : a.id();
 
     EventDispatcher eventDispatcher = new EventDispatcher(subscriberId, eventTypesAndHandlers);
 
@@ -72,20 +93,21 @@ public class EventDispatcherInitializer {
   }
 
   private Map<Class<?>, EventHandler> makeEventTypesAndHandlers(List<EventHandler> handlers) {
-      return handlers.stream().collect(Collectors.toMap(EventHandler::getEventType, eh -> eh));
-
+    // TODO - if keys are not unique you get an IllegalStateException
+    // Need to provide a helpful error message
+    return handlers.stream().collect(Collectors.toMap(EventHandler::getEventType, eh -> eh));
   }
 
   private Map<String, Set<String>> makeAggregatesAndEvents(List<EventHandler> handlers) {
     return handlers.stream().collect(Collectors.toMap(
             eh -> EventEntityUtil.toEntityTypeName(eh.getEventType()),
             eh -> Collections.singleton(eh.getEventType().getName()),
-            (e1, e2)  -> {
+            (e1, e2) -> {
               HashSet<String> r = new HashSet<String>(e1);
               r.addAll(e2);
               return r;
             }
-            ));
+    ));
   }
 
 }

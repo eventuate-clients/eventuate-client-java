@@ -8,6 +8,9 @@ public class EventContext {
 
   private String eventToken;
 
+  public EventContext() {
+  }
+
   public EventContext(String eventToken) {
     this.eventToken = eventToken;
   }
@@ -31,4 +34,7 @@ public class EventContext {
     return eventToken;
   }
 
+  public void setEventToken(String eventToken) {
+    this.eventToken = eventToken;
+  }
 }

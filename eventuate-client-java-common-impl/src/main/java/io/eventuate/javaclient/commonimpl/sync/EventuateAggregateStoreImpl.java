@@ -2,22 +2,21 @@ package io.eventuate.javaclient.commonimpl.sync;
 
 import io.eventuate.Aggregate;
 import io.eventuate.Aggregates;
-import io.eventuate.CompletableFutureUtil;
 import io.eventuate.DispatchedEvent;
 import io.eventuate.EntityIdAndType;
 import io.eventuate.EntityIdAndVersion;
 import io.eventuate.EntityWithMetadata;
 import io.eventuate.Event;
 import io.eventuate.FindOptions;
-import io.eventuate.Int128;
 import io.eventuate.SaveOptions;
+import io.eventuate.Snapshot;
+import io.eventuate.SnapshotManager;
 import io.eventuate.SubscriberOptions;
 import io.eventuate.UpdateOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudMapping;
 import io.eventuate.javaclient.commonimpl.DefaultSerializedEventDeserializer;
 import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
-import io.eventuate.javaclient.commonimpl.EventIdTypeAndData;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
-import io.eventuate.javaclient.commonimpl.JSonMapper;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
 import io.eventuate.javaclient.commonimpl.SerializedEventDeserializer;
 import io.eventuate.sync.EventuateAggregateStore;
@@ -29,19 +28,24 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudFindOptions;
+import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudSaveOptions;
+import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudUpdateOptions;
+import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toSerializedEventsWithIds;
 import static io.eventuate.javaclient.commonimpl.EventuateActivity.activityLogger;
 
 public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   private AggregateCrud aggregateCrud;
   private AggregateEvents aggregateEvents;
+  private SnapshotManager snapshotManager;
   private SerializedEventDeserializer serializedEventDeserializer = new DefaultSerializedEventDeserializer();
 
-  public EventuateAggregateStoreImpl(AggregateCrud aggregateCrud, AggregateEvents aggregateEvents) {
+  public EventuateAggregateStoreImpl(AggregateCrud aggregateCrud, AggregateEvents aggregateEvents, SnapshotManager snapshotManager) {
     this.aggregateCrud = aggregateCrud;
     this.aggregateEvents = aggregateEvents;
+    this.snapshotManager = snapshotManager;
   }
 
   public void setSerializedEventDeserializer(SerializedEventDeserializer serializedEventDeserializer) {
@@ -60,9 +64,9 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   @Override
   public <T extends Aggregate<T>> EntityIdAndVersion save(Class<T> clasz, List<Event> events, Optional<SaveOptions> saveOptions) {
-    List<EventTypeAndData> serializedEvents = events.stream().map(this::toEventTypeAndData).collect(Collectors.toList());
+    List<EventTypeAndData> serializedEvents = events.stream().map(AggregateCrudMapping::toEventTypeAndData).collect(Collectors.toList());
     try {
-      EntityIdVersionAndEventIds result = aggregateCrud.save(clasz.getName(), serializedEvents, saveOptions);
+      EntityIdVersionAndEventIds result = aggregateCrud.save(clasz.getName(), serializedEvents, toAggregateCrudSaveOptions(saveOptions));
       if (activityLogger.isDebugEnabled())
         activityLogger.debug("Saved entity: {} {} {}", clasz.getName(), result.getEntityId(), toSerializedEventsWithIds(serializedEvents, result.getEventIds()));
       return result.toEntityIdAndVersion();
@@ -70,13 +74,6 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       activityLogger.error(String.format("Save entity failed: %s", clasz.getName()), e);
       throw e;
     }
-  }
-
-  private List<EventIdTypeAndData> toSerializedEventsWithIds(List<EventTypeAndData> serializedEvents, List<Int128> eventIds) {
-    return IntStream.range(0, serializedEvents.size()).boxed().map(idx ->
-            new EventIdTypeAndData(eventIds.get(idx),
-                    serializedEvents.get(idx).getEventType(),
-                    serializedEvents.get(idx).getEventData())).collect(Collectors.toList());
   }
 
 
@@ -90,21 +87,20 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
     return find(clasz, entityId, Optional.ofNullable(findOptions));
   }
 
-  private EventTypeAndData toEventTypeAndData(Event event) {
-    return new EventTypeAndData(event.getClass().getName(), JSonMapper.toJson(event));
-  }
-
   @Override
   public <T extends Aggregate<T>> EntityWithMetadata<T> find(Class<T> clasz, String entityId, Optional<FindOptions> findOptions) {
     try {
-      LoadedEvents le = aggregateCrud.find(clasz.getName(), entityId, findOptions);
+      LoadedEvents le = aggregateCrud.find(clasz.getName(), entityId, toAggregateCrudFindOptions(findOptions));
       if (activityLogger.isDebugEnabled())
         activityLogger.debug("Loaded entity: {} {} {}", clasz.getName(), entityId, le.getEvents());
-      List<Event> events = le.getEvents().stream().map(this::toEvent).collect(Collectors.toList());
+      List<Event> events = le.getEvents().stream().map(AggregateCrudMapping::toEvent).collect(Collectors.toList());
       return new EntityWithMetadata<T>(
-              new EntityIdAndVersion(entityId, le.getEvents().get(le.getEvents().size() - 1).getId()),
+              new EntityIdAndVersion(entityId,
+                      le.getEvents().isEmpty() ? le.getSnapshot().get().getEntityVersion() : le.getEvents().get(le.getEvents().size() - 1).getId()),
               events,
-              Aggregates.recreateAggregate(clasz, events));
+              le.getSnapshot().map(ss ->
+                      Aggregates.applyEventsToMutableAggregate((T)snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
+                      .orElseGet( () -> Aggregates.recreateAggregate(clasz, events)));
     } catch (RuntimeException e) {
       if (activityLogger.isDebugEnabled())
         activityLogger.error(String.format("Find entity failed: %s %s", clasz.getName(), entityId), e);
@@ -122,23 +118,16 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
     return update(clasz, entityIdAndVersion, events, Optional.ofNullable(updateOptions));
   }
 
-  private Event toEvent(EventIdTypeAndData eventIdTypeAndData) {
-    try {
-      return JSonMapper.fromJson(eventIdTypeAndData.getEventData(), (Class<Event>) Class.forName(eventIdTypeAndData.getEventType()));
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
 
   @Override
   public <T extends Aggregate<T>> EntityIdAndVersion update(Class<T> clasz, EntityIdAndVersion entityIdAndVersion, List<Event> events, Optional<UpdateOptions> updateOptions) {
     try {
-      List<EventTypeAndData> serializedEvents = events.stream().map(this::toEventTypeAndData).collect(Collectors.toList());
+      List<EventTypeAndData> serializedEvents = events.stream().map(AggregateCrudMapping::toEventTypeAndData).collect(Collectors.toList());
       EntityIdVersionAndEventIds result = aggregateCrud.update(new EntityIdAndType(entityIdAndVersion.getEntityId(), clasz.getName()),
               entityIdAndVersion.getEntityVersion(),
               serializedEvents,
-              updateOptions);
+              toAggregateCrudUpdateOptions(updateOptions));
       if (activityLogger.isDebugEnabled())
         activityLogger.debug("Updated entity: {} {} {}", clasz.getName(), result.getEntityId(), toSerializedEventsWithIds(serializedEvents, result.getEventIds()));
 
@@ -165,5 +154,16 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       throw e;
     }
   }
+
+  @Override
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, List<Event> oldEvents, List<Event> newEvents) {
+    return snapshotManager.possiblySnapshot(aggregate, oldEvents, newEvents);
+  }
+
+  @Override
+  public Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot) {
+    return snapshotManager.recreateFromSnapshot(clasz, snapshot);
+  }
+
 
 }

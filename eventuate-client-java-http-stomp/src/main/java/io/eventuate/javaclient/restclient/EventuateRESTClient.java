@@ -73,7 +73,7 @@ public class EventuateRESTClient implements AggregateCrud {
   }
 
   @Override
-  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> options) {
+  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<AggregateCrudSaveOptions> options) {
     return withRetry(() -> {
       if (logger.isDebugEnabled())
         logger.debug("save: " + aggregateType + ", events" + events);
@@ -81,7 +81,7 @@ public class EventuateRESTClient implements AggregateCrud {
       CompletableFuture<EntityIdVersionAndEventIds> cf = new CompletableFuture<>();
 
       CreateEntityRequest request = new CreateEntityRequest(aggregateType, events);
-      options.flatMap(SaveOptions::getEntityId).ifPresent(request::setEntityId);
+      options.flatMap(AggregateCrudSaveOptions::getEntityId).ifPresent(request::setEntityId);
 
       String json = JSonMapper.toJson(request);
       context.runOnContext(ignore -> {
@@ -149,11 +149,11 @@ public class EventuateRESTClient implements AggregateCrud {
   }
 
   @Override
-  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<FindOptions> findOptions) {
+  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<AggregateCrudFindOptions> findOptions) {
     return withRetry(() -> {
       CompletableFuture<LoadedEvents> cf = new CompletableFuture<>();
       context.runOnContext(ignore -> {
-        httpClient.get(makePath() + "/" + aggregateType + "/" + entityId + makeGetQueryString(findOptions.flatMap(FindOptions::getTriggeringEvent)))
+        httpClient.get(makePath() + "/" + aggregateType + "/" + entityId + makeGetQueryString(findOptions.flatMap(AggregateCrudFindOptions::getTriggeringEvent)))
                 .handler(response -> {
                   if (response.statusCode() == 200) {
                     response.bodyHandler(body -> {
@@ -161,8 +161,10 @@ public class EventuateRESTClient implements AggregateCrud {
                         GetEntityResponse r = JSonMapper.fromJson(body.toString(), GetEntityResponse.class);
                         if (r.getEvents().isEmpty())
                           cf.completeExceptionally(new EntityNotFoundException());
-                        else
-                          cf.complete(new LoadedEvents(r.getEvents()));
+                        else {
+                          Optional<SerializedSnapshotWithVersion> snapshot = Optional.empty();  // TODO - retrieve snapshot
+                          cf.complete(new LoadedEvents(snapshot, r.getEvents()));
+                        }
                       } catch (Throwable e) {
                         cf.completeExceptionally(e);
                       }
@@ -186,15 +188,16 @@ public class EventuateRESTClient implements AggregateCrud {
 
 
   @Override
-  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType aggregateIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
+  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType aggregateIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<AggregateCrudUpdateOptions> updateOptions) {
     return withRetry(() -> {
       if (logger.isDebugEnabled())
         logger.debug("update: " + aggregateIdAndType.getEntityType() + ", " + aggregateIdAndType.getEntityId() + ", " + ", events" + events + ", " + updateOptions);
 
       CompletableFuture<EntityIdVersionAndEventIds> cf = new CompletableFuture<>();
 
+      // TODO post snapshot if there is one
       UpdateEntityRequest request = new UpdateEntityRequest(events, entityVersion,
-              updateOptions.flatMap(UpdateOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
+              updateOptions.flatMap(AggregateCrudUpdateOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
 
       String json = JSonMapper.toJson(request);
       context.runOnContext(ignore -> {

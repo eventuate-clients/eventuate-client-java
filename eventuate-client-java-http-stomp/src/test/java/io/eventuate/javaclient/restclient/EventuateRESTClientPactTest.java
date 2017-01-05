@@ -5,7 +5,16 @@ import au.com.dius.pact.consumer.PactProviderRule;
 import au.com.dius.pact.consumer.PactVerification;
 import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
 import au.com.dius.pact.model.PactFragment;
-import io.eventuate.*;
+import io.eventuate.DuplicateTriggeringEventException;
+import io.eventuate.EntityAlreadyExistsException;
+import io.eventuate.EntityIdAndType;
+import io.eventuate.EntityNotFoundException;
+import io.eventuate.EventuateServerException;
+import io.eventuate.Int128;
+import io.eventuate.OptimisticLockingException;
+import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
 import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventIdTypeAndData;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
@@ -23,7 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class EventuateRESTClientPactTest {
 
@@ -348,7 +357,7 @@ public class EventuateRESTClientPactTest {
   private CompletableFuture<EntityIdVersionAndEventIds> saveWithId() {
     return client.save(RequestResponseJsonObjects.aggregateType,
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)),
-            Optional.of(new SaveOptions().withId(RequestResponseJsonObjects.createId)));
+            Optional.of(new AggregateCrudSaveOptions().withId(RequestResponseJsonObjects.createId)));
   }
 
   @Test(expected=EntityAlreadyExistsException.class)
@@ -383,7 +392,7 @@ public class EventuateRESTClientPactTest {
   }
 
   private CompletableFuture<LoadedEvents> findWithEventContext() {
-    return client.find(RequestResponseJsonObjects.aggregateType, RequestResponseJsonObjects.ENTITY_ID, Optional.of(new FindOptions().withTriggeringEvent(Optional.of(RequestResponseJsonObjects.makeEventContext()))));
+    return client.find(RequestResponseJsonObjects.aggregateType, RequestResponseJsonObjects.ENTITY_ID, Optional.of(new AggregateCrudFindOptions().withTriggeringEvent(Optional.of(RequestResponseJsonObjects.makeEventContext()))));
   }
 
   @Test(expected=DuplicateTriggeringEventException.class)
@@ -409,7 +418,7 @@ public class EventuateRESTClientPactTest {
     return client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
             Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)),
-            Optional.of(new UpdateOptions().withTriggeringEvent(RequestResponseJsonObjects.makeEventContext())));
+            Optional.of(new AggregateCrudUpdateOptions().withTriggeringEvent(RequestResponseJsonObjects.makeEventContext())));
   }
 
   @Test(expected=DuplicateTriggeringEventException.class)

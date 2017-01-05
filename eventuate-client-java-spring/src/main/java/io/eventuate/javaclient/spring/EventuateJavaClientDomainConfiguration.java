@@ -1,7 +1,11 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventuateAggregateStore;
+import io.eventuate.SnapshotManager;
+import io.eventuate.SnapshotManagerImpl;
+import io.eventuate.SnapshotStrategy;
 import io.eventuate.javaclient.domain.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -46,4 +50,5 @@ public class EventuateJavaClientDomainConfiguration {
   public EventHandlerProcessor eventHandlerProcessorEventHandlerContextReturningCompletableFuture(EventuateAggregateStore aggregateStore) {
     return new EventHandlerProcessorEventHandlerContextReturningCompletableFuture(aggregateStore);
   }
+
 }

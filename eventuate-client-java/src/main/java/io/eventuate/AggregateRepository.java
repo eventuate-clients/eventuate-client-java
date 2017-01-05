@@ -13,29 +13,23 @@ import java.util.function.Supplier;
 
 /**
  * A convenience class, with a reactive-style API that provides a simplified interface for creating and updating aggregates.
- * @param <T> the aggregate class, which is a subtype of CommandProcessingAggregate
+ *
+ * @param <T>  the aggregate class, which is a subtype of CommandProcessingAggregate
  * @param <CT> the aggregate's command class, a subtype of command
- *
- * <p>For example:
- *
- * <pre class="code">
- * public class AccountService {
- *   private final AggregateRepository&gt;Account, AccountCommand&gt; accountRepository;
- *
- *   public AccountService(AggregateRepository&gt;Account, AccountCommand&gt; accountRepository) {
- *     this.accountRepository = accountRepository;
- *   }
- *
- *   public CompletableFuture&gt;EntityWithIdAndVersion&gt;Account&gt;&gt; openAccount(BigDecimal initialBalance) {
- *     return accountRepository.save(new CreateAccountCommand(initialBalance));
- *   }
- * }
- *</pre>
- *
+ *             <p>For example:
+ *             <pre class="code">
+ *             public class AccountService {
+ *             private final AggregateRepository&gt;Account, AccountCommand&gt; accountRepository;
+ *             public AccountService(AggregateRepository&gt;Account, AccountCommand&gt; accountRepository) {
+ *             this.accountRepository = accountRepository;
+ *             }
+ *             public CompletableFuture&gt;EntityWithIdAndVersion&gt;Account&gt;&gt; openAccount(BigDecimal initialBalance) {
+ *             return accountRepository.save(new CreateAccountCommand(initialBalance));
+ *             }
+ *             }
+ *             </pre>
  * @see CommandProcessingAggregate
  * @see Command
- *
- *
  */
 
 
@@ -48,7 +42,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   /**
    * Constructs a new AggregateRepository for the specified aggregate class and aggregate store
-   * @param clasz the class of the aggregate
+   *
+   * @param clasz          the class of the aggregate
    * @param aggregateStore the aggregate store
    */
   public AggregateRepository(Class<T> clasz, EventuateAggregateStore aggregateStore) {
@@ -56,8 +51,10 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
     this.aggregateStore = aggregateStore;
   }
 
+
   /**
    * Create a new Aggregate by processing a command and persisting the events
+   *
    * @param cmd the command to process
    * @return the newly persisted aggregate
    */
@@ -66,9 +63,9 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   }
 
   /**
-   *
    * Create a new Aggregate by processing a command and persisting the events
-   * @param cmd the command to process
+   *
+   * @param cmd         the command to process
    * @param saveOptions creation options
    * @return the newly persisted aggregate
    */
@@ -87,8 +84,9 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   /**
    * Update the specified aggregate by processing a command and saving events
+   *
    * @param entityId the id of the aggregate to update
-   * @param cmd the command to process
+   * @param cmd      the command to process
    * @return the updated and persisted aggregate
    */
   public CompletableFuture<EntityWithIdAndVersion<T>> update(String entityId, final CT cmd) {
@@ -123,8 +121,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
             logger.debug("got exception - NOT retrying: " + attempt, throwable);
           result.completeExceptionally(throwable);
         }
-      }
-      else
+      } else
         result.complete(val);
       return null;
     });
@@ -133,25 +130,27 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   /**
    * Update the specified aggregate by processing a command and saving events
-   * @param entityId the id of the aggregate to update
-   * @param cmd the command to process
+   *
+   * @param entityId      the id of the aggregate to update
+   * @param cmd           the command to process
    * @param updateOptions options for updating
    * @return the updated and persisted aggregate
    */
   public CompletableFuture<EntityWithIdAndVersion<T>> update(final String entityId, final CT cmd, Optional<UpdateOptions> updateOptions) {
-      return updateWithProvidedCommand(entityId, (a) -> Optional.of(cmd), updateOptions);
+    return updateWithProvidedCommand(entityId, (a) -> Optional.of(cmd), updateOptions);
   }
 
   /**
    * Update the specified aggregate by processing a command and saving events
-   * @param entityId the id of the aggregate to update
+   *
+   * @param entityId        the id of the aggregate to update
    * @param commandProvider the provider of the command to process
-   * @param updateOptions options for updating
+   * @param updateOptions   options for updating
    * @return the updated and persisted aggregate
    */
   public CompletableFuture<EntityWithIdAndVersion<T>> updateWithProvidedCommand(final String entityId, final Function<T, Optional<CT>> commandProvider, Optional<UpdateOptions> updateOptions) {
 
-    return withRetry( () -> {
+    return withRetry(() -> {
       CompletableFuture<LoadedEntityWithMetadata> eo = aggregateStore.find(clasz, entityId, updateOptions.map(uo -> new FindOptions().withTriggeringEvent(uo.getTriggeringEvent())))
               .handleAsync((tEntityWithMetadata, throwable) -> {
                 if (throwable == null)
@@ -179,27 +178,36 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
           if (events.isEmpty()) {
             return CompletableFuture.completedFuture(entityWithMetaData.toEntityWithIdAndVersion());
           } else {
-            return aggregateStore.update(clasz, entityWithMetaData.getEntityIdAndVersion(), events, updateOptions)
-                    .thenApply(entityIdAndVersion -> {
-                      Aggregates.applyEventsToMutableAggregate(aggregate, events);
-                      return new EntityWithIdAndVersion<T>(entityIdAndVersion, aggregate);
-                    })
+            Aggregates.applyEventsToMutableAggregate(aggregate, events);
+            CompletableFuture<EntityWithIdAndVersion<T>> result = new CompletableFuture<>();
+
+            aggregateStore.update(clasz, entityWithMetaData.getEntityIdAndVersion(), events,
+                    withPossibleSnapshot(updateOptions, aggregate, loadedEntityWithMetadata.ewmd.getEvents(), events))
+                    .thenApply(entityIdAndVersion -> new EntityWithIdAndVersion<T>(entityIdAndVersion, aggregate))
                     .handle((r, t) -> {
-                      if (t == null)
-                        return r;
-                      else {
+                      if (t == null) {
+                        result.complete(r);
+                      } else {
                         logger.debug("Exception updating aggregate", t);
                         Throwable unwrapped = CompletableFutureUtil.unwrap(t);
-                        if (unwrapped instanceof DuplicateTriggeringEventException)
-                          return new EntityWithIdAndVersion<T>(entityWithMetaData.getEntityIdAndVersion(), aggregate);
-                        else if (unwrapped instanceof RuntimeException)
-                          throw (RuntimeException) unwrapped;
-                        else if (t instanceof RuntimeException)
-                          throw (RuntimeException) t;
+                        if (unwrapped instanceof DuplicateTriggeringEventException) {
+                          // This should not happen but lets handle it anyway
+                          aggregateStore.find(clasz, entityId, Optional.empty())
+                                  .handle((reloadedAggregate, findException) -> {
+                                    if (findException == null) {
+                                      result.complete(new EntityWithIdAndVersion<>(reloadedAggregate.getEntityIdAndVersion(), reloadedAggregate.getEntity()));
+                                    } else {
+                                      result.completeExceptionally(findException);
+                                    }
+                                    return null;
+                                  });
+                        }
                         else
-                          throw new RuntimeException(unwrapped);
+                          result.completeExceptionally(unwrapped);
                       }
+                      return null;
                     });
+            return result;
           }
         } else {
           return aggregateStore.find(clasz, entityId, Optional.empty()).thenApply(EntityWithMetadata::toEntityWithIdAndVersion);
@@ -208,8 +216,15 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
     });
   }
 
+  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, List<Event> oldEvents, List<Event> newEvents) {
+    Optional<UpdateOptions> optionsWithSnapshot = aggregateStore.possiblySnapshot(aggregate, oldEvents, newEvents)
+            .flatMap(snapshot -> Optional.of(updateOptions.orElse(new UpdateOptions()).withSnapshot(snapshot)));
+    return optionsWithSnapshot.isPresent() ? optionsWithSnapshot : updateOptions;
+  }
+
   /**
    * Find an aggregate
+   *
    * @param entityId the id of the aggregate to find
    * @return the aggregate
    */
@@ -219,7 +234,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   /**
    * Find an aggregate
-   * @param entityId the id of the aggregate to find
+   *
+   * @param entityId    the id of the aggregate to find
    * @param findOptions options for finding
    * @return the aggregate
    */
@@ -229,7 +245,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   /**
    * Find an aggregate
-   * @param entityId the id of the aggregate to find
+   *
+   * @param entityId    the id of the aggregate to find
    * @param findOptions options for finding
    * @return the aggregate
    */

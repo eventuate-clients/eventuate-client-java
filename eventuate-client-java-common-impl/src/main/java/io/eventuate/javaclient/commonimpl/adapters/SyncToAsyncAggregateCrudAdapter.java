@@ -3,10 +3,10 @@ package io.eventuate.javaclient.commonimpl.adapters;
 import io.eventuate.Aggregate;
 import io.eventuate.CompletableFutureUtil;
 import io.eventuate.EntityIdAndType;
-import io.eventuate.FindOptions;
 import io.eventuate.Int128;
-import io.eventuate.SaveOptions;
-import io.eventuate.UpdateOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
 import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
@@ -25,7 +25,7 @@ public class SyncToAsyncAggregateCrudAdapter implements io.eventuate.javaclient.
   }
 
   @Override
-  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<SaveOptions> options) {
+  public CompletableFuture<EntityIdVersionAndEventIds> save(String aggregateType, List<EventTypeAndData> events, Optional<AggregateCrudSaveOptions> options) {
     try {
       return CompletableFuture.completedFuture(target.save(aggregateType, events, options));
     } catch (Exception e) {
@@ -34,7 +34,7 @@ public class SyncToAsyncAggregateCrudAdapter implements io.eventuate.javaclient.
   }
 
   @Override
-  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<FindOptions> findOptions) {
+  public <T extends Aggregate<T>> CompletableFuture<LoadedEvents> find(String aggregateType, String entityId, Optional<AggregateCrudFindOptions> findOptions) {
     try {
       return CompletableFuture.completedFuture(target.find(aggregateType, entityId, findOptions));
     } catch (Exception e) {
@@ -43,7 +43,7 @@ public class SyncToAsyncAggregateCrudAdapter implements io.eventuate.javaclient.
   }
 
   @Override
-  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<UpdateOptions> updateOptions) {
+  public CompletableFuture<EntityIdVersionAndEventIds> update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<AggregateCrudUpdateOptions> updateOptions) {
     try {
       return CompletableFuture.completedFuture(target.update(entityIdAndType, entityVersion, events, updateOptions));
     } catch (Exception e) {

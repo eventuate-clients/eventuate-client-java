@@ -1,6 +1,12 @@
 package io.eventuate;
 
-import io.eventuate.example.banking.domain.*;
+import io.eventuate.example.banking.domain.Account;
+import io.eventuate.example.banking.domain.AccountCommand;
+import io.eventuate.example.banking.domain.AccountCreatedEvent;
+import io.eventuate.example.banking.domain.AccountDebitedEvent;
+import io.eventuate.example.banking.domain.CreateAccountCommand;
+import io.eventuate.example.banking.domain.DebitAccountCommand;
+import io.eventuate.example.banking.domain.NoopAccountCommand;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,9 +19,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class AggregateRepositoryTest {
 
@@ -45,14 +55,24 @@ public class AggregateRepositoryTest {
   private Account accountToUpdate;
   private final Optional<UpdateOptions> UPDATE_OPTIONS_WITH_TRIGGERING_EVENT = Optional.of(new UpdateOptions().withTriggeringEvent(triggeringEventContext));
   private final Optional<FindOptions> FIND_OPTIONS_WITH_TRIGGERING_EVENT = Optional.of(new FindOptions().withTriggeringEvent(triggeringEventContext));
+  private SnapshotManager snapshotManager;
 
 
+  public Account makeAccountToUpdate() {
+    Account account = new Account();
+    account.apply(new AccountCreatedEvent(INITIAL_BALANCE));
+    return account;
+
+  }
   @Before
   public void setUp() {
     aggregateStore = mock(EventuateAggregateStore.class);
     repository = new AggregateRepository<>(Account.class, aggregateStore);
-    accountToUpdate = new Account();
-    accountToUpdate.apply(new AccountCreatedEvent(INITIAL_BALANCE));
+    accountToUpdate = makeAccountToUpdate();
+
+    snapshotManager = mock(SnapshotManager.class);
+
+    when(aggregateStore.possiblySnapshot(any(), any(), any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -94,6 +114,7 @@ public class AggregateRepositoryTest {
     verify(aggregateStore).update(Account.class, entityIdAndVersion,
             debitedEvents, Optional.empty());
 
+    verify(aggregateStore).possiblySnapshot(any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
   }
@@ -121,8 +142,8 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)),
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, creationAndUpdateEvents, accountToUpdate))
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, makeAccountToUpdate())),
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, creationAndUpdateEvents, makeAccountToUpdate()))
                     );
 
 
@@ -150,11 +171,12 @@ public class AggregateRepositoryTest {
     verify(aggregateStore).update(Account.class, entityIdAndUpdatedVersion,
             debitedEvents, Optional.empty());
 
+    verify(aggregateStore, times(2)).possiblySnapshot(any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
   }
 
-
+// TODO - I don't see how update can fail. Optimistic locking ensures that nothing has changed since find()
   @Test
   public void shouldUpdateWithDuplicateTriggeringEventExceptionThrownByUpdate() throws ExecutionException, InterruptedException {
 
@@ -168,21 +190,23 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, makeAccountToUpdate())));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), UPDATE_OPTIONS_WITH_TRIGGERING_EVENT).get();
 
-    assertEquals(entityId, ewidv.getEntityIdAndVersion().getEntityId());
-    assertEquals(createdEntityVersion, ewidv.getEntityIdAndVersion().getEntityVersion());
-    assertEquals(INITIAL_BALANCE, ewidv.getAggregate().getBalance());
 
     verify(aggregateStore).find(Account.class, entityId, FIND_OPTIONS_WITH_TRIGGERING_EVENT);
+    verify(aggregateStore).find(Account.class, entityId, Optional.empty());
     verify(aggregateStore).update(Account.class, entityIdAndVersion,
             debitedEvents, UPDATE_OPTIONS_WITH_TRIGGERING_EVENT);
 
+    verify(aggregateStore).possiblySnapshot(any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
+    assertEquals(entityId, ewidv.getEntityIdAndVersion().getEntityId());
+    assertEquals(createdEntityVersion, ewidv.getEntityIdAndVersion().getEntityVersion());
+    assertEquals(INITIAL_BALANCE, ewidv.getAggregate().getBalance());
 
   }
 

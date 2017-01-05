@@ -1,9 +1,9 @@
 package io.eventuate.javaclient.domain;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.AccessibleObject;
 
 public interface EventHandlerProcessor {
-  boolean supports(Method method);
+  boolean supports(AccessibleObject fieldOrMethod);
 
-  EventHandler process(Object eventHandler, Method method);
+  EventHandler process(Object eventHandler, AccessibleObject fieldOrMethod);
 }

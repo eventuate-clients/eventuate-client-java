@@ -1,5 +1,6 @@
 include 'eventuate-client-java'
 include 'eventuate-client-java-spring'
+include 'eventuate-client-java-spring-common'
 include 'eventuate-client-java-spring-autoconfigure'
 include 'eventuate-client-java-common-impl'
 include 'eventuate-client-java-event-handling'

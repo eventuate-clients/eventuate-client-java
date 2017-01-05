@@ -3,7 +3,6 @@ package io.eventuate;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 public class CompletableFutureUtil {
@@ -32,7 +31,7 @@ public class CompletableFutureUtil {
     return outcome;
   }
 
-  private static <T> void completeSomehow(CompletableFuture<T> outcome, T result, Throwable throwable) {
+  public static <T> void completeSomehow(CompletableFuture<T> outcome, T result, Throwable throwable) {
     if (throwable == null)
       outcome.complete(result);
     else

@@ -28,4 +28,6 @@ public interface EventuateAggregateStore {
 
   void subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions subscriberOptions, Function<DispatchedEvent<Event>, CompletableFuture<?>> dispatch);
 
+  Optional<Snapshot> possiblySnapshot(Aggregate aggregate, List<Event> oldEvents, List<Event> newEvents);
+  Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot);
 }

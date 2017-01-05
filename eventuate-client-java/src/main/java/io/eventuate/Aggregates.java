@@ -11,8 +11,12 @@ public class Aggregates {
   }
 
   public static <T extends Aggregate<T>> T recreateAggregate(Class<T> clasz, List<Event> events) {
+    return applyEventsToMutableAggregate(newAggregate(clasz), events);
+  }
+
+  private static <T extends Aggregate<T>> T newAggregate(Class<T> clasz) {
     try {
-      return applyEventsToMutableAggregate(clasz.newInstance(), events);
+      return clasz.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }

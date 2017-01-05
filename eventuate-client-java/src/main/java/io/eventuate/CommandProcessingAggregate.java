@@ -7,7 +7,8 @@ import java.util.List;
  * @param <T> the aggregate class
  * @param <CT> the aggregate's command class
  */
-public interface CommandProcessingAggregate<T extends CommandProcessingAggregate, CT>  extends Aggregate<T> {
+public interface CommandProcessingAggregate<T extends CommandProcessingAggregate, CT>
+        extends Aggregate<T> {
 
   /**
    * Process a command by returning events

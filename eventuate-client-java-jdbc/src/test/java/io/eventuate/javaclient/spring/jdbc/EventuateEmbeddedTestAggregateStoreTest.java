@@ -1,10 +1,19 @@
 package io.eventuate.javaclient.spring.jdbc;
 
-import io.eventuate.*;
-import io.eventuate.javaclient.commonimpl.AggregateCrud;
+import io.eventuate.DuplicateTriggeringEventException;
+import io.eventuate.EntityIdAndType;
+import io.eventuate.EventContext;
+import io.eventuate.Int128;
+import io.eventuate.OptimisticLockingException;
+import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;
+import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
 import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
+import io.eventuate.javaclient.commonimpl.SerializedSnapshot;
+import io.eventuate.javaclient.commonimpl.sync.AggregateCrud;
+import io.eventuate.javaclient.spring.EventuateJavaClientDomainConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +26,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
-import static io.eventuate.testutil.AsyncUtil.await;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = EventuateEmbeddedTestAggregateStoreTest.EventuateJdbcEventStoreTestConfiguration.class)
@@ -36,38 +45,57 @@ public class EventuateEmbeddedTestAggregateStoreTest {
 
   @Test
   public void findShouldCompleteWithDuplicateTriggeringEventException() throws ExecutionException, InterruptedException {
-    EntityIdVersionAndEventIds eidv = await(eventStore.save(aggregateType,
+    EntityIdVersionAndEventIds eidv = eventStore.save(aggregateType,
             Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
-            Optional.of(new SaveOptions().withEventContext(ectx))));
-    CompletableFuture<LoadedEvents> c = eventStore.find(aggregateType, eidv.getEntityId(), Optional.of(new FindOptions().withTriggeringEvent(ectx)));
-    shouldCompletedExceptionally(c, DuplicateTriggeringEventException.class);
+            Optional.of(new AggregateCrudSaveOptions().withEventContext(ectx)));
+    shouldCompletedExceptionally(DuplicateTriggeringEventException.class, () -> eventStore.find(aggregateType, eidv.getEntityId(), Optional.of(new AggregateCrudFindOptions().withTriggeringEvent(ectx))));
   }
 
   @Test
   public void updateShouldCompleteWithOptimisticLockingException() throws ExecutionException, InterruptedException {
-    EntityIdVersionAndEventIds eidv = await(eventStore.save(aggregateType,
+    EntityIdVersionAndEventIds eidv = eventStore.save(aggregateType,
             Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
-            Optional.of(new SaveOptions().withEventContext(ectx))));
-    CompletableFuture<EntityIdVersionAndEventIds> c = eventStore.update(new EntityIdAndType(eidv.getEntityId(), aggregateType),
-            new Int128(0,0), Collections.singletonList(new EventTypeAndData("MyEventType", "{}")), Optional.of(new UpdateOptions()));
-    shouldCompletedExceptionally(c, OptimisticLockingException.class);
+            Optional.of(new AggregateCrudSaveOptions().withEventContext(ectx)));
+    shouldCompletedExceptionally(OptimisticLockingException.class, () -> eventStore.update(new EntityIdAndType(eidv.getEntityId(), aggregateType),
+            new Int128(0,0), Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
+            Optional.of(new AggregateCrudUpdateOptions())));
   }
 
 
-  private void shouldCompletedExceptionally(CompletableFuture<?> c, Class<?> exceptionClass) throws InterruptedException, ExecutionException {
+  private <T> void shouldCompletedExceptionally(Class<? extends Throwable> exceptionClass, Supplier<T> body)  {
     try {
-      c.get();
+      body.get();
       fail();
-    } catch (ExecutionException e) {
-      if (!exceptionClass.isInstance(e.getCause()))
+    } catch (Throwable e) {
+      if (!exceptionClass.isInstance(e))
         throw e;
     }
   }
 
   @Configuration
-  @Import(EventuateJdbcEventStoreConfiguration.class)
+  @Import({EmbeddedTestAggregateStoreConfiguration.class, EventuateJavaClientDomainConfiguration.class})
   @EnableAutoConfiguration
   public static class EventuateJdbcEventStoreTestConfiguration {
+
+  }
+
+  @Test
+  public void shouldSaveAndLoadSnapshot() {
+
+    EntityIdVersionAndEventIds eidv = eventStore.save(aggregateType,
+            Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
+            Optional.of(new AggregateCrudSaveOptions().withEventContext(ectx)));
+
+    EntityIdVersionAndEventIds updateResult = eventStore.update(
+            new EntityIdAndType(eidv.getEntityId(), aggregateType),
+            eidv.getEntityVersion(),
+            Collections.singletonList(new EventTypeAndData("MyEventType", "{}")),
+            Optional.of(new AggregateCrudUpdateOptions().withSnapshot(new SerializedSnapshot("X", "Y"))));
+
+    LoadedEvents findResult = eventStore.find(aggregateType, eidv.getEntityId(), Optional.of(new AggregateCrudFindOptions()));
+
+    assertTrue(findResult.getSnapshot().isPresent());
+    assertTrue(findResult.getEvents().isEmpty());
 
   }
 }

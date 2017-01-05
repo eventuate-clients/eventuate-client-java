@@ -24,29 +24,23 @@ import java.util.function.Supplier;
 
 /**
  * A convenience class, with a synchronous-style API that provides a simplified interface for creating and updating aggregates.
- * @param <T> the aggregate class, which is a subtype of CommandProcessingAggregate
+ *
+ * @param <T>  the aggregate class, which is a subtype of CommandProcessingAggregate
  * @param <CT> the aggregate's command class, a subtype of command
- *
- * <p>For example:
- *
- * <pre class="code">
- * public class AccountService {
- *   private final AggregateRepository&gt;Account, AccountCommand&gt; accountRepository;
- *
- *   public AccountService(AggregateRepository&gt;Account, AccountCommand&gt; accountRepository) {
- *     this.accountRepository = accountRepository;
- *   }
- *
- *   public EntityWithIdAndVersion&gt;Account&gt; openAccount(BigDecimal initialBalance) {
- *     return accountRepository.save(new CreateAccountCommand(initialBalance));
- *   }
- * }
- *</pre>
- *
+ *             <p>For example:
+ *             <pre class="code">
+ *             public class AccountService {
+ *             private final AggregateRepository&gt;Account, AccountCommand&gt; accountRepository;
+ *             public AccountService(AggregateRepository&gt;Account, AccountCommand&gt; accountRepository) {
+ *             this.accountRepository = accountRepository;
+ *             }
+ *             public EntityWithIdAndVersion&gt;Account&gt; openAccount(BigDecimal initialBalance) {
+ *             return accountRepository.save(new CreateAccountCommand(initialBalance));
+ *             }
+ *             }
+ *             </pre>
  * @see CommandProcessingAggregate
  * @see Command
- *
- *
  */
 
 public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> {
@@ -123,7 +117,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
     int MAX_RETRIES = 10;
     for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
       if (laste != null)
-          logger.debug("got optimistic locking exception - retrying", laste);
+        logger.debug("got optimistic locking exception - retrying", laste);
       try {
         return asyncRequest.get();
       } catch (OptimisticLockingException e) {
@@ -159,27 +153,36 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   public EntityWithIdAndVersion<T> updateWithProvidedCommand(final String entityId, final Function<T, Optional<CT>> commandProvider, Optional<UpdateOptions> updateOptions) {
 
     return withRetry(() -> {
-      EntityWithMetadata<T> tEntityWithMetadata;
+      final EntityWithMetadata<T> entityWithMetadata;
       try {
-        tEntityWithMetadata = aggregateStore.find(clasz, entityId, updateOptions.map(uo -> new FindOptions().withTriggeringEvent(uo.getTriggeringEvent())));
+        entityWithMetadata = aggregateStore.find(clasz, entityId, updateOptions.map(uo -> new FindOptions().withTriggeringEvent(uo.getTriggeringEvent())));
       } catch (DuplicateTriggeringEventException dtee) {
         return aggregateStore.find(clasz, entityId, Optional.empty()).toEntityWithIdAndVersion();
       }
-      EntityWithMetadata<T> entityWithMetaData = tEntityWithMetadata;
-      final T aggregate = entityWithMetaData.getEntity();
+      final T aggregate = entityWithMetadata.getEntity();
       List<Event> events = commandProvider.apply(aggregate).map(aggregate::processCommand).orElse(Collections.emptyList());
       if (events.isEmpty()) {
-        return entityWithMetaData.toEntityWithIdAndVersion();
+        return entityWithMetadata.toEntityWithIdAndVersion();
       } else {
         try {
-          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetaData.getEntityIdAndVersion(), events, updateOptions);
           Aggregates.applyEventsToMutableAggregate(aggregate, events);
-          return new EntityWithIdAndVersion<T>(entityIdAndVersion, aggregate);
-        } catch (DuplicateTriggeringEventException dtee) {
-          return new EntityWithIdAndVersion<T>(entityWithMetaData.getEntityIdAndVersion(), aggregate);
+          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), events, withPossibleSnapshot(updateOptions, aggregate, entityWithMetadata.getEvents(), events));
+          return new EntityWithIdAndVersion<>(entityIdAndVersion, aggregate);
+        } catch (DuplicateTriggeringEventException e) {
+          // TODO this should not happen
+          EntityWithMetadata<T> reloadedEntity = aggregateStore.find(clasz, entityId, updateOptions.map(uo -> new FindOptions().withTriggeringEvent(uo.getTriggeringEvent())));
+          return new EntityWithIdAndVersion<>(reloadedEntity.getEntityIdAndVersion(), aggregate);
         }
       }
     });
+  }
+
+  // Duplicate
+
+  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, List<Event> oldEvents, List<Event> newEvents) {
+    Optional<UpdateOptions> optionsWithSnapshot = aggregateStore.possiblySnapshot(aggregate, oldEvents, newEvents)
+            .flatMap(snapshot -> Optional.of(updateOptions.orElse(new UpdateOptions()).withSnapshot(snapshot)));
+    return optionsWithSnapshot.isPresent() ? optionsWithSnapshot : updateOptions;
   }
 
   /**

@@ -45,7 +45,8 @@ import java.util.List;
  * }  
  *</pre>
  */
-public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT> implements CommandProcessingAggregate<T, CT> {
+public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT>
+        implements CommandProcessingAggregate<T, CT> {
 
   /**
    * Apply an event by invoking an apply() method whose parameter class matches the event's class

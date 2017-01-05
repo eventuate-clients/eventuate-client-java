@@ -157,7 +157,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
               logger.trace("Sending acknowledgement: " + ah);
             state.connection.ack(ah);
           }
-          logger.trace("Pending ack headers {} {}", sub.subscriberId, ackOrderTracker.getPendingHeaders());
+          logger.trace("Pending ack headers {} {}", sub.subscriberId, ackOrderTracker.getPendingHeaders().size());
         });
       }
       return null;

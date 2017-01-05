@@ -5,7 +5,7 @@ import io.eventuate.*;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 
-public class EventHandlerProcessorEventHandlerContextReturningCompletableFuture implements EventHandlerProcessor {
+public class EventHandlerProcessorEventHandlerContextReturningCompletableFuture extends EventHandlerMethodProcessor {
 
   private EventuateAggregateStore aggregateStore;
 
@@ -14,12 +14,12 @@ public class EventHandlerProcessorEventHandlerContextReturningCompletableFuture 
   }
 
   @Override
-  public boolean supports(Method method) {
+  public boolean supportsMethod(Method method) {
     return EventHandlerProcessorUtil.isMethodWithOneParameterOfTypeReturning(method, EventHandlerContext.class, CompletableFuture.class);
   }
 
   @Override
-  public EventHandler process(Object eventHandler, Method method) {
+  public EventHandler processMethod(Object eventHandler, Method method) {
     return new EventHandlerContextReturningCompletableFuture(aggregateStore, method, eventHandler);
   }
 
