@@ -1,15 +1,17 @@
 package io.eventuate;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 public class EntityWithMetadata<T extends Aggregate> {
 
   private EntityIdAndVersion entityIdAndVersion;
+  private Optional<Int128> snapshotVersion;
   private List<Event> events;
 
-  public EntityWithMetadata(EntityIdAndVersion entityIdAndVersion, List<Event> events, T entity) {
+  public EntityWithMetadata(EntityIdAndVersion entityIdAndVersion, Optional<Int128> snapshotVersion, List<Event> events, T entity) {
     this.entityIdAndVersion = entityIdAndVersion;
+    this.snapshotVersion = snapshotVersion;
     this.events = events;
     this.entity = entity;
   }
@@ -22,6 +24,10 @@ public class EntityWithMetadata<T extends Aggregate> {
 
   public EntityIdAndVersion getEntityIdAndVersion() {
     return entityIdAndVersion;
+  }
+
+  public Optional<Int128> getSnapshotVersion() {
+    return snapshotVersion;
   }
 
   public EntityWithIdAndVersion<T> toEntityWithIdAndVersion() {

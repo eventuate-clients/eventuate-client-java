@@ -14,6 +14,7 @@ public interface EventuateAggregateStore {
 
   /**
    * Save an aggregate in the event store
+   *
    * @param clasz the class of the aggregate
    * @param events the events to save
    * @param <T> the type of the aggregate
@@ -33,6 +34,23 @@ public interface EventuateAggregateStore {
 
   CompletableFuture<?> subscribe(String subscriberId, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions subscriberOptions, Function<DispatchedEvent<Event>, CompletableFuture<?>> dispatch);
 
-  Optional<Snapshot> possiblySnapshot(Aggregate aggregate, List<Event> oldEvents, List<Event> newEvents);
+  /**
+   * Possibly generate a snapshot
+   *
+   * @param aggregate - the updated aggregate
+   * @param snapshotVersion - the version of the snapshot, if any, that the aggregate was created from
+   * @param oldEvents - the old events that were used to recreate the aggregate
+   * @param newEvents - the new events generated as a result of executing a command
+   * @return an optional snapshot
+   */
+  Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents);
+
+  /**
+   * Recreate an aggregate from a snapshot
+   *
+   * @param clasz the aggregate class
+   * @param snapshot the snapshot
+   * @return the aggregate
+   */
   Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot);
 }

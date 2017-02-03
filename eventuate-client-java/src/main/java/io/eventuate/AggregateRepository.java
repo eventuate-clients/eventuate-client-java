@@ -182,7 +182,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
             CompletableFuture<EntityWithIdAndVersion<T>> result = new CompletableFuture<>();
 
             aggregateStore.update(clasz, entityWithMetaData.getEntityIdAndVersion(), events,
-                    withPossibleSnapshot(updateOptions, aggregate, loadedEntityWithMetadata.ewmd.getEvents(), events))
+                    withPossibleSnapshot(updateOptions, aggregate, entityWithMetaData.getSnapshotVersion(), loadedEntityWithMetadata.ewmd.getEvents(), events))
                     .thenApply(entityIdAndVersion -> new EntityWithIdAndVersion<T>(entityIdAndVersion, aggregate))
                     .handle((r, t) -> {
                       if (t == null) {
@@ -216,8 +216,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
     });
   }
 
-  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, List<Event> oldEvents, List<Event> newEvents) {
-    Optional<UpdateOptions> optionsWithSnapshot = aggregateStore.possiblySnapshot(aggregate, oldEvents, newEvents)
+  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+    Optional<UpdateOptions> optionsWithSnapshot = aggregateStore.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents)
             .flatMap(snapshot -> Optional.of(updateOptions.orElse(new UpdateOptions()).withSnapshot(snapshot)));
     return optionsWithSnapshot.isPresent() ? optionsWithSnapshot : updateOptions;
   }

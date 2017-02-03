@@ -8,6 +8,7 @@ import io.eventuate.EntityIdAndVersion;
 import io.eventuate.EntityWithMetadata;
 import io.eventuate.Event;
 import io.eventuate.FindOptions;
+import io.eventuate.Int128;
 import io.eventuate.SaveOptions;
 import io.eventuate.Snapshot;
 import io.eventuate.SnapshotManager;
@@ -19,6 +20,7 @@ import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
 import io.eventuate.javaclient.commonimpl.SerializedEventDeserializer;
+import io.eventuate.javaclient.commonimpl.SerializedSnapshotWithVersion;
 import io.eventuate.sync.EventuateAggregateStore;
 
 import java.util.List;
@@ -97,13 +99,14 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       return new EntityWithMetadata<T>(
               new EntityIdAndVersion(entityId,
                       le.getEvents().isEmpty() ? le.getSnapshot().get().getEntityVersion() : le.getEvents().get(le.getEvents().size() - 1).getId()),
+              le.getSnapshot().map(SerializedSnapshotWithVersion::getEntityVersion),
               events,
               le.getSnapshot().map(ss ->
                       Aggregates.applyEventsToMutableAggregate((T)snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
                       .orElseGet( () -> Aggregates.recreateAggregate(clasz, events)));
     } catch (RuntimeException e) {
       if (activityLogger.isDebugEnabled())
-        activityLogger.error(String.format("Find entity failed: %s %s", clasz.getName(), entityId), e);
+        activityLogger.trace(String.format("Find entity failed: %s %s", clasz.getName(), entityId), e);
       throw e;
     }
   }
@@ -156,8 +159,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   }
 
   @Override
-  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, List<Event> oldEvents, List<Event> newEvents) {
-    return snapshotManager.possiblySnapshot(aggregate, oldEvents, newEvents);
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+    return snapshotManager.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents);
   }
 
   @Override

@@ -75,8 +75,12 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       tappedOutcome = CompletableFutureUtil.tap(outcome, (result, throwable) -> {
         if (throwable == null)
           activityLogger.debug("Loaded entity: {} {} {}", clasz.getName(), entityId, result.getEvents());
-        else
-          activityLogger.error(String.format("Find entity failed: %s %s", clasz.getName(), entityId), throwable);
+        else {
+          if (throwable instanceof EventuateException)
+            activityLogger.trace(String.format("Find entity failed: %s %s %s", clasz.getName(), entityId, throwable.getClass().getName()));
+          else
+            activityLogger.trace(String.format("Find entity failed: %s %s", clasz.getName(), entityId), throwable);
+        }
       });
     else
       tappedOutcome = outcome;
@@ -85,10 +89,11 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       List<Event> events = le.getEvents().stream().map(AggregateCrudMapping::toEvent).collect(Collectors.toList());
       return new EntityWithMetadata<T>(
               new EntityIdAndVersion(entityId, le.getEvents().isEmpty() ? le.getSnapshot().get().getEntityVersion() : le.getEvents().get(le.getEvents().size() - 1).getId()),
+              le.getSnapshot().map(SerializedSnapshotWithVersion::getEntityVersion),
               events,
               le.getSnapshot().map(ss ->
-                      Aggregates.applyEventsToMutableAggregate((T)snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
-              .orElseGet( () -> Aggregates.recreateAggregate(clasz, events)));
+                      Aggregates.applyEventsToMutableAggregate((T) snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
+                      .orElseGet(() -> Aggregates.recreateAggregate(clasz, events)));
     });
   }
 
@@ -141,8 +146,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   }
 
   @Override
-  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, List<Event> oldEvents, List<Event> newEvents) {
-    return snapshotManager.possiblySnapshot(aggregate, oldEvents, newEvents);
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+    return snapshotManager.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents);
   }
 
   @Override

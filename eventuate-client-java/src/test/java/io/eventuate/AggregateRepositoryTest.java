@@ -72,7 +72,7 @@ public class AggregateRepositoryTest {
 
     snapshotManager = mock(SnapshotManager.class);
 
-    when(aggregateStore.possiblySnapshot(any(), any(), any())).thenReturn(Optional.empty());
+    when(aggregateStore.possiblySnapshot(any(), any(), any(), any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -96,7 +96,7 @@ public class AggregateRepositoryTest {
   public void shouldUpdate() throws ExecutionException, InterruptedException {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
-            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)));
+            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
 
 
     when(aggregateStore.update(Account.class, entityIdAndVersion,
@@ -114,7 +114,7 @@ public class AggregateRepositoryTest {
     verify(aggregateStore).update(Account.class, entityIdAndVersion,
             debitedEvents, Optional.empty());
 
-    verify(aggregateStore).possiblySnapshot(any(), any(), any());
+    verify(aggregateStore).possiblySnapshot(any(), any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
   }
@@ -122,7 +122,7 @@ public class AggregateRepositoryTest {
   public void shouldUpdateWhenNoEvents() throws ExecutionException, InterruptedException {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
-            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)));
+            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new NoopAccountCommand(), Optional.empty()).get();
@@ -142,8 +142,8 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, makeAccountToUpdate())),
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, creationAndUpdateEvents, makeAccountToUpdate()))
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, makeAccountToUpdate())),
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, Optional.empty(), creationAndUpdateEvents, makeAccountToUpdate()))
                     );
 
 
@@ -171,7 +171,7 @@ public class AggregateRepositoryTest {
     verify(aggregateStore).update(Account.class, entityIdAndUpdatedVersion,
             debitedEvents, Optional.empty());
 
-    verify(aggregateStore, times(2)).possiblySnapshot(any(), any(), any());
+    verify(aggregateStore, times(2)).possiblySnapshot(any(), any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
   }
@@ -182,7 +182,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, FIND_OPTIONS_WITH_TRIGGERING_EVENT))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
 
     when(aggregateStore.update(Account.class, entityIdAndVersion,
             debitedEvents, UPDATE_OPTIONS_WITH_TRIGGERING_EVENT))
@@ -190,7 +190,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, makeAccountToUpdate())));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, makeAccountToUpdate())));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), UPDATE_OPTIONS_WITH_TRIGGERING_EVENT).get();
@@ -201,7 +201,7 @@ public class AggregateRepositoryTest {
     verify(aggregateStore).update(Account.class, entityIdAndVersion,
             debitedEvents, UPDATE_OPTIONS_WITH_TRIGGERING_EVENT);
 
-    verify(aggregateStore).possiblySnapshot(any(), any(), any());
+    verify(aggregateStore).possiblySnapshot(any(), any(), any(), any());
     verifyNoMoreInteractions(aggregateStore);
 
     assertEquals(entityId, ewidv.getEntityIdAndVersion().getEntityId());
@@ -218,7 +218,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, creationEvents, accountToUpdate)));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), UPDATE_OPTIONS_WITH_TRIGGERING_EVENT).get();
