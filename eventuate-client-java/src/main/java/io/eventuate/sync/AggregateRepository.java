@@ -9,6 +9,7 @@ import io.eventuate.EntityIdAndVersion;
 import io.eventuate.EntityWithIdAndVersion;
 import io.eventuate.EntityWithMetadata;
 import io.eventuate.Event;
+import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
 import io.eventuate.Int128;
 import io.eventuate.OptimisticLockingException;
@@ -167,7 +168,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
       } else {
         try {
           Aggregates.applyEventsToMutableAggregate(aggregate, events);
-          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), events, withPossibleSnapshot(updateOptions, aggregate, entityWithMetadata.getSnapshotVersion(), entityWithMetadata.getEvents(), events));
+          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), events,
+                  withPossibleSnapshot(updateOptions, aggregate, entityWithMetadata.getSnapshotVersion(), entityWithMetadata.getEvents(), events));
           return new EntityWithIdAndVersion<>(entityIdAndVersion, aggregate);
         } catch (DuplicateTriggeringEventException e) {
           // TODO this should not happen
@@ -180,7 +182,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
 
   // Duplicate
 
-  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+  private Optional<UpdateOptions> withPossibleSnapshot(Optional<UpdateOptions> updateOptions, T aggregate, Optional<Int128> snapshotVersion, List<EventWithMetadata> oldEvents, List<Event> newEvents) {
     Optional<UpdateOptions> optionsWithSnapshot = aggregateStore.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents)
             .flatMap(snapshot -> Optional.of(updateOptions.orElse(new UpdateOptions()).withSnapshot(snapshot)));
     return optionsWithSnapshot.isPresent() ? optionsWithSnapshot : updateOptions;

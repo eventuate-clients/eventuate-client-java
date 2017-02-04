@@ -40,6 +40,7 @@ public class AggregateRepositoryTest {
   private final Int128 createdEntityVersion = new Int128(1, 2);
   private final EntityIdAndVersion entityIdAndVersion = new EntityIdAndVersion(entityId, createdEntityVersion);
   private final List<Event> creationEvents = Collections.singletonList(new AccountCreatedEvent(INITIAL_BALANCE));
+  private final List<EventWithMetadata> creationEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountCreatedEvent(INITIAL_BALANCE), createdEntityVersion));
 
   private final Int128 updatedEntityVersion = new Int128(3, 4);
   private final EntityIdAndVersion entityIdAndUpdatedVersion = new EntityIdAndVersion(entityId, updatedEntityVersion);
@@ -48,8 +49,10 @@ public class AggregateRepositoryTest {
 
   private final String transaction1234 = "transaction1234";
   List<Event> debitedEvents = Collections.singletonList(new AccountDebitedEvent(DEBIT_AMOUNT, transaction1234));
+  List<EventWithMetadata> debitedEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountDebitedEvent(DEBIT_AMOUNT, transaction1234), updatedEntityVersion));
 
   private List<Event> creationAndUpdateEvents = Stream.concat(creationEvents.stream(), debitedEvents.stream()).collect(Collectors.toList());
+  private List<EventWithMetadata> creationAndUpdateEventsWithIds = Stream.concat(creationEventsWithIds.stream(), debitedEventsWithIds.stream()).collect(Collectors.toList());
   private final String eventToken = "eventId1234";
   private EventContext triggeringEventContext = new EventContext(eventToken);
   private Account accountToUpdate;
@@ -96,7 +99,7 @@ public class AggregateRepositoryTest {
   public void shouldUpdate() throws ExecutionException, InterruptedException {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
-            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
+            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, accountToUpdate)));
 
 
     when(aggregateStore.update(Account.class, entityIdAndVersion,
@@ -122,7 +125,7 @@ public class AggregateRepositoryTest {
   public void shouldUpdateWhenNoEvents() throws ExecutionException, InterruptedException {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
-            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
+            .thenReturn(CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, accountToUpdate)));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new NoopAccountCommand(), Optional.empty()).get();
@@ -142,8 +145,8 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, makeAccountToUpdate())),
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, Optional.empty(), creationAndUpdateEvents, makeAccountToUpdate()))
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, makeAccountToUpdate())),
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndUpdatedVersion, Optional.empty(), creationAndUpdateEventsWithIds, makeAccountToUpdate()))
                     );
 
 
@@ -182,7 +185,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, FIND_OPTIONS_WITH_TRIGGERING_EVENT))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, accountToUpdate)));
 
     when(aggregateStore.update(Account.class, entityIdAndVersion,
             debitedEvents, UPDATE_OPTIONS_WITH_TRIGGERING_EVENT))
@@ -190,7 +193,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, makeAccountToUpdate())));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, makeAccountToUpdate())));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), UPDATE_OPTIONS_WITH_TRIGGERING_EVENT).get();
@@ -218,7 +221,7 @@ public class AggregateRepositoryTest {
 
     when(aggregateStore.find(Account.class, entityId, Optional.empty()))
             .thenReturn(
-                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEvents, accountToUpdate)));
+                    CompletableFuture.completedFuture(new EntityWithMetadata<>(entityIdAndVersion, Optional.empty(), creationEventsWithIds, accountToUpdate)));
 
     EntityWithIdAndVersion<Account> ewidv = repository.update(entityId,
             new DebitAccountCommand(DEBIT_AMOUNT, transaction1234), UPDATE_OPTIONS_WITH_TRIGGERING_EVENT).get();

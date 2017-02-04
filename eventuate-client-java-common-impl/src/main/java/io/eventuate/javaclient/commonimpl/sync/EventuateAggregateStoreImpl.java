@@ -7,6 +7,7 @@ import io.eventuate.EntityIdAndType;
 import io.eventuate.EntityIdAndVersion;
 import io.eventuate.EntityWithMetadata;
 import io.eventuate.Event;
+import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
 import io.eventuate.Int128;
 import io.eventuate.SaveOptions;
@@ -95,12 +96,13 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       LoadedEvents le = aggregateCrud.find(clasz.getName(), entityId, toAggregateCrudFindOptions(findOptions));
       if (activityLogger.isDebugEnabled())
         activityLogger.debug("Loaded entity: {} {} {}", clasz.getName(), entityId, le.getEvents());
-      List<Event> events = le.getEvents().stream().map(AggregateCrudMapping::toEvent).collect(Collectors.toList());
+      List<EventWithMetadata> eventsWithIds = le.getEvents().stream().map(AggregateCrudMapping::toEventWithMetadata).collect(Collectors.toList());
+      List<Event> events = eventsWithIds.stream().map(EventWithMetadata::getEvent).collect(Collectors.toList());
       return new EntityWithMetadata<T>(
               new EntityIdAndVersion(entityId,
                       le.getEvents().isEmpty() ? le.getSnapshot().get().getEntityVersion() : le.getEvents().get(le.getEvents().size() - 1).getId()),
               le.getSnapshot().map(SerializedSnapshotWithVersion::getEntityVersion),
-              events,
+              eventsWithIds,
               le.getSnapshot().map(ss ->
                       Aggregates.applyEventsToMutableAggregate((T)snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
                       .orElseGet( () -> Aggregates.recreateAggregate(clasz, events)));
@@ -159,7 +161,7 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   }
 
   @Override
-  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<EventWithMetadata> oldEvents, List<Event> newEvents) {
     return snapshotManager.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents);
   }
 

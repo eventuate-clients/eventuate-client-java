@@ -3,6 +3,7 @@ package io.eventuate.example.banking.domain;
 import io.eventuate.Aggregate;
 import io.eventuate.Aggregates;
 import io.eventuate.Event;
+import io.eventuate.EventWithMetadata;
 import io.eventuate.Int128;
 import io.eventuate.Snapshot;
 import io.eventuate.SnapshotStrategy;
@@ -18,7 +19,7 @@ public class AccountSnapshotStrategy implements SnapshotStrategy {
   }
 
   @Override
-  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<EventWithMetadata> oldEvents, List<Event> newEvents) {
     Account account = (Account) aggregate;
     return Optional.of(new AccountSnapshot(account.getBalance()));
   }

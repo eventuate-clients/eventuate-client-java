@@ -24,7 +24,7 @@ public interface SnapshotStrategy {
    * @param newEvents - the new events generated as a result of executing a command
    * @return an optional snapshot
    */
-  Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents);
+  Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<EventWithMetadata> oldEvents, List<Event> newEvents);
 
   /**
    * Recreate an aggregate from a snapshot

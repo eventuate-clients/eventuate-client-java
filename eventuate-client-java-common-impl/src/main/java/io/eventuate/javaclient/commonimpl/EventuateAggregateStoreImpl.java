@@ -86,11 +86,12 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
       tappedOutcome = outcome;
 
     return tappedOutcome.thenApply(le -> {
-      List<Event> events = le.getEvents().stream().map(AggregateCrudMapping::toEvent).collect(Collectors.toList());
+      List<EventWithMetadata> eventsWithIds = le.getEvents().stream().map(AggregateCrudMapping::toEventWithMetadata).collect(Collectors.toList());
+      List<Event> events = eventsWithIds.stream().map(EventWithMetadata::getEvent).collect(Collectors.toList());
       return new EntityWithMetadata<T>(
               new EntityIdAndVersion(entityId, le.getEvents().isEmpty() ? le.getSnapshot().get().getEntityVersion() : le.getEvents().get(le.getEvents().size() - 1).getId()),
               le.getSnapshot().map(SerializedSnapshotWithVersion::getEntityVersion),
-              events,
+              eventsWithIds,
               le.getSnapshot().map(ss ->
                       Aggregates.applyEventsToMutableAggregate((T) snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
                       .orElseGet(() -> Aggregates.recreateAggregate(clasz, events)));
@@ -146,7 +147,7 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   }
 
   @Override
-  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<Event> oldEvents, List<Event> newEvents) {
+  public Optional<Snapshot> possiblySnapshot(Aggregate aggregate, Optional<Int128> snapshotVersion, List<EventWithMetadata> oldEvents, List<Event> newEvents) {
     return snapshotManager.possiblySnapshot(aggregate, snapshotVersion, oldEvents, newEvents);
   }
 

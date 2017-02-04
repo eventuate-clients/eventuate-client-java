@@ -1,6 +1,7 @@
 package io.eventuate.javaclient.commonimpl;
 
 import io.eventuate.Event;
+import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
 import io.eventuate.Int128;
 import io.eventuate.SaveOptions;
@@ -61,4 +62,10 @@ public class AggregateCrudMapping {
       throw new RuntimeException(e);
     }
   }
+
+  public static EventWithMetadata toEventWithMetadata(EventIdTypeAndData eventIdTypeAndData) {
+    return new EventWithMetadata(toEvent(eventIdTypeAndData), eventIdTypeAndData.getId());
+  }
+
+
 }

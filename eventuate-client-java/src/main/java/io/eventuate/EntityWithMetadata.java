@@ -7,9 +7,9 @@ public class EntityWithMetadata<T extends Aggregate> {
 
   private EntityIdAndVersion entityIdAndVersion;
   private Optional<Int128> snapshotVersion;
-  private List<Event> events;
+  private List<EventWithMetadata> events;
 
-  public EntityWithMetadata(EntityIdAndVersion entityIdAndVersion, Optional<Int128> snapshotVersion, List<Event> events, T entity) {
+  public EntityWithMetadata(EntityIdAndVersion entityIdAndVersion, Optional<Int128> snapshotVersion, List<EventWithMetadata> events, T entity) {
     this.entityIdAndVersion = entityIdAndVersion;
     this.snapshotVersion = snapshotVersion;
     this.events = events;
@@ -34,7 +34,7 @@ public class EntityWithMetadata<T extends Aggregate> {
     return new EntityWithIdAndVersion<T>(entityIdAndVersion, entity);
   }
 
-  public List<Event> getEvents() {
+  public List<EventWithMetadata> getEvents() {
     return events;
   }
 }
