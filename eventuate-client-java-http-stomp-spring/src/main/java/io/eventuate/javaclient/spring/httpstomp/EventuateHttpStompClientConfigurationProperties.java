@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static io.eventuate.javaclient.stompclient.EventuateAggregateStoreBuilder.makeDefaultUrl;
+import static io.eventuate.javaclient.saasclient.EventuateAggregateStoreBuilder.makeDefaultUrl;
 
 /**
  * A Spring Boot type-safe configuration properties class for connecting to an Eventuate server.

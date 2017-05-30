@@ -7,7 +7,7 @@ import io.eventuate.Event;
 import io.eventuate.EventuateAggregateStore;
 import io.eventuate.SaveOptions;
 import io.eventuate.javaclient.spring.tests.common.AbstractAccountIntegrationReactiveTest;
-import io.eventuate.javaclient.stompclient.EventuateAggregateStoreBuilder;
+import io.eventuate.javaclient.saasclient.EventuateAggregateStoreBuilder;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -21,7 +21,7 @@ import static io.eventuate.testutil.AsyncUtil.await;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = AutoConfigurationIntegrationTestConfiguration.class)
 @IntegrationTest
-public class NonSpringIntegrationTest extends AbstractAccountIntegrationReactiveTest {
+public class EventuateAggregateStoreBuilderIntegrationTest extends AbstractAccountIntegrationReactiveTest {
 
   private EventuateAggregateStore aggregateStore = EventuateAggregateStoreBuilder.defaultFromEnv();
 
