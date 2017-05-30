@@ -23,4 +23,16 @@ public class EventuateCredentials {
   public String getSpace() {
     return space;
   }
+
+  public void setApiKeyId(String apiKeyId) {
+    this.apiKeyId = apiKeyId;
+  }
+
+  public void setApiKeySecret(String apiKeySecret) {
+    this.apiKeySecret = apiKeySecret;
+  }
+
+  public void setSpace(String space) {
+    this.space = space;
+  }
 }

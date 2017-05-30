@@ -35,10 +35,5 @@ public class IdempotencyTest {
     EntityIdAndVersion savedAccountEntity = aggregateStore.save(Account.class, accountEvents, Optional.empty()).get();
 
     EntityWithMetadata<Account> loadedAccount = aggregateStore.find(Account.class, savedAccountEntity.getEntityId(), Optional.empty()).get();
-
-
-
-
-
   }
 }
