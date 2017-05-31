@@ -65,7 +65,7 @@ public class EventuateAggregateStoreBuilder {
     validateKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
     validateSpace(eventuateCredentials.getSpace());
 
-    if(this.vertx == null) {
+    if (this.vertx == null) {
       this.vertx = vertx();
     }
 
@@ -80,7 +80,7 @@ public class EventuateAggregateStoreBuilder {
     validateKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
     validateSpace(eventuateCredentials.getSpace());
 
-    if(this.vertx == null) {
+    if (this.vertx == null) {
       this.vertx = vertx();
     }
 
