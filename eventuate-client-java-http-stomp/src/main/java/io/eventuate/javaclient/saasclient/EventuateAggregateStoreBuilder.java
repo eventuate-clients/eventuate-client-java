@@ -27,7 +27,7 @@ public class EventuateAggregateStoreBuilder {
           Optional.ofNullable(System.getenv("EVENTUATE_API_SPACE")).orElseGet(() -> "default")
   );
 
-  private Vertx vertx = vertx();
+  private Vertx vertx;
 
   public static EventuateAggregateStoreBuilder standard() {
     return new EventuateAggregateStoreBuilder();
@@ -38,7 +38,7 @@ public class EventuateAggregateStoreBuilder {
   }
 
   public EventuateAggregateStoreBuilder withCredentials(String key, String secret) {
-    checkKeyAndSecret(key, secret);
+    validateKeyAndSecret(key, secret);
 
     this.eventuateCredentials.setApiKeyId(key);
     this.eventuateCredentials.setApiKeySecret(secret);
@@ -46,7 +46,7 @@ public class EventuateAggregateStoreBuilder {
   }
 
   public EventuateAggregateStoreBuilder withSpace(String space) {
-    checkSpace(space);
+    validateSpace(space);
 
     this.eventuateCredentials.setSpace(space);
     return this;
@@ -62,8 +62,12 @@ public class EventuateAggregateStoreBuilder {
   }
 
   public EventuateAggregateStore build() {
-    checkKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
-    checkSpace(eventuateCredentials.getSpace());
+    validateKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
+    validateSpace(eventuateCredentials.getSpace());
+
+    if(this.vertx == null) {
+      this.vertx = vertx();
+    }
 
     AggregateCrud aggregateCrud = new EventuateRESTClient(vertx, eventuateCredentials, makeDefaultUrl());
     AggregateEvents aggregateEvents = new EventuateSTOMPClient(vertx, eventuateCredentials, makeDefaultUrl());
@@ -73,8 +77,12 @@ public class EventuateAggregateStoreBuilder {
   }
 
   public io.eventuate.sync.EventuateAggregateStore buildSync() {
-    checkKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
-    checkSpace(eventuateCredentials.getSpace());
+    validateKeyAndSecret(eventuateCredentials.getApiKeyId(), eventuateCredentials.getApiKeySecret());
+    validateSpace(eventuateCredentials.getSpace());
+
+    if(this.vertx == null) {
+      this.vertx = vertx();
+    }
 
     io.eventuate.javaclient.commonimpl.sync.AggregateCrud aggregateCrud =
             new AsyncToSyncAggregateCrudAdapter(new EventuateRESTClient(vertx, eventuateCredentials, makeDefaultUrl()));
@@ -99,7 +107,7 @@ public class EventuateAggregateStoreBuilder {
     }
   }
 
-  private void checkKeyAndSecret(String key, String secret) {
+  private void validateKeyAndSecret(String key, String secret) {
     if (StringUtils.isBlank(key)) {
       throw new EventuateClientException("Eventuate apiKey cannot be empty");
     }
@@ -108,7 +116,7 @@ public class EventuateAggregateStoreBuilder {
     }
   }
 
-  private void checkSpace(String space) {
+  private void validateSpace(String space) {
     if (StringUtils.isBlank(space)) {
       throw new EventuateClientException("Eventuate space cannot be empty");
     }
