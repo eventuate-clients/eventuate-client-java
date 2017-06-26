@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static io.eventuate.javaclient.saasclient.EventuateAggregateStoreBuilder.makeDefaultUrl;
+
 /**
  * A Spring Boot type-safe configuration properties class for connecting to an Eventuate server.
  * <p>
@@ -24,14 +26,6 @@ public class EventuateHttpStompClientConfigurationProperties {
   private Integer stompServerPort = 61614;
 
   private URI url = makeDefaultUrl();
-
-  private static URI makeDefaultUrl() {
-    try {
-      return new URI("https://api.eventuate.io");
-    } catch (URISyntaxException e) {
-      throw new RuntimeException();
-    }
-  }
 
   @NotBlank
   private String apiKeyId = null;
