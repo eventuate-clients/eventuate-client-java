@@ -171,7 +171,8 @@ public class EventuateSTOMPClient implements AggregateEvents {
             stompEvent.getEventData(), stompEvent.getEventType(),
             stompEvent.getSwimlane(),
             stompEvent.getOffset(),
-            new EventContext(stompEvent.getEventToken()));
+            new EventContext(stompEvent.getEventToken()),
+            Optional.empty());
   }
 
   public boolean isConnected() throws ExecutionException, InterruptedException {

@@ -1,7 +1,9 @@
 package io.eventuate.javaclient.saasclient;
 
+import io.eventuate.DefaultMissingApplyEventMethodStrategy;
 import io.eventuate.EventuateAggregateStore;
 import io.eventuate.EventuateClientException;
+import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.SnapshotManager;
 import io.eventuate.SnapshotManagerImpl;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
@@ -28,6 +30,7 @@ public class EventuateAggregateStoreBuilder {
   );
 
   private Vertx vertx;
+  private MissingApplyEventMethodStrategy missingApplyEventMethodStrategy = new DefaultMissingApplyEventMethodStrategy();
 
   public static EventuateAggregateStoreBuilder standard() {
     return new EventuateAggregateStoreBuilder();
@@ -52,6 +55,14 @@ public class EventuateAggregateStoreBuilder {
     return this;
   }
 
+  public EventuateAggregateStoreBuilder withMissingApplyEventMethodStrategy(MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
+    if (missingApplyEventMethodStrategy == null) {
+      throw new EventuateClientException("MissingApplyEventMethodStrategy cannot be null");
+    }
+    this.missingApplyEventMethodStrategy = missingApplyEventMethodStrategy;
+    return this;
+  }
+
   public EventuateAggregateStoreBuilder withVertx(Vertx vertx) {
     if (vertx == null) {
       throw new EventuateClientException("Vertx instance cannot be null");
@@ -73,7 +84,7 @@ public class EventuateAggregateStoreBuilder {
     AggregateEvents aggregateEvents = new EventuateSTOMPClient(vertx, eventuateCredentials, makeDefaultUrl());
     SnapshotManager snapshotManager = new SnapshotManagerImpl();
 
-    return new EventuateAggregateStoreImpl(aggregateCrud, aggregateEvents, snapshotManager);
+    return new EventuateAggregateStoreImpl(aggregateCrud, aggregateEvents, snapshotManager, missingApplyEventMethodStrategy);
   }
 
   public io.eventuate.sync.EventuateAggregateStore buildSync() {
@@ -90,7 +101,7 @@ public class EventuateAggregateStoreBuilder {
             new AsyncToSyncAggregateEventsAdapter(new EventuateSTOMPClient(vertx, eventuateCredentials, makeDefaultUrl()));
     SnapshotManager snapshotManager = new SnapshotManagerImpl();
 
-    return new io.eventuate.javaclient.commonimpl.sync.EventuateAggregateStoreImpl(aggregateCrud, aggregateEvents, snapshotManager);
+    return new io.eventuate.javaclient.commonimpl.sync.EventuateAggregateStoreImpl(aggregateCrud, aggregateEvents, snapshotManager, missingApplyEventMethodStrategy);
   }
 
   private static Vertx vertx() {

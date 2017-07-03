@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.fail;
 
 public class EventuateRESTClientTest {
@@ -75,7 +74,7 @@ public class EventuateRESTClientTest {
 
     CompletableFuture<EntityIdVersionAndEventIds> f = client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
-            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
+            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData, Optional.empty())), Optional.empty());
     try {
       f.get(4, TimeUnit.SECONDS);
       fail();

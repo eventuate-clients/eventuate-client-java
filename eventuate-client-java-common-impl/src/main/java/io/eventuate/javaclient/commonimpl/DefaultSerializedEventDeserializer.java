@@ -6,6 +6,7 @@ import io.eventuate.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Optional;
 
 public class DefaultSerializedEventDeserializer implements SerializedEventDeserializer {
@@ -22,7 +23,8 @@ public class DefaultSerializedEventDeserializer implements SerializedEventDeseri
             se.getId(),
             event,
             se.getSwimLane(),
-            se.getOffset(), se.getEventContext()));
+            se.getOffset(), se.getEventContext(),
+            se.getMetadata() == null ? Optional.empty() : se.getMetadata().map(md -> JSonMapper.fromJson(md, Map.class))));
   }
 
   private Class<Event> toEventClass(String eventType) {

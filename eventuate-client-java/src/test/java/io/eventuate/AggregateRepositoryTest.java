@@ -40,7 +40,7 @@ public class AggregateRepositoryTest {
   private final Int128 createdEntityVersion = new Int128(1, 2);
   private final EntityIdAndVersion entityIdAndVersion = new EntityIdAndVersion(entityId, createdEntityVersion);
   private final List<Event> creationEvents = Collections.singletonList(new AccountCreatedEvent(INITIAL_BALANCE));
-  private final List<EventWithMetadata> creationEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountCreatedEvent(INITIAL_BALANCE), createdEntityVersion));
+  private final List<EventWithMetadata> creationEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountCreatedEvent(INITIAL_BALANCE), createdEntityVersion, Optional.empty()));
 
   private final Int128 updatedEntityVersion = new Int128(3, 4);
   private final EntityIdAndVersion entityIdAndUpdatedVersion = new EntityIdAndVersion(entityId, updatedEntityVersion);
@@ -49,7 +49,7 @@ public class AggregateRepositoryTest {
 
   private final String transaction1234 = "transaction1234";
   List<Event> debitedEvents = Collections.singletonList(new AccountDebitedEvent(DEBIT_AMOUNT, transaction1234));
-  List<EventWithMetadata> debitedEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountDebitedEvent(DEBIT_AMOUNT, transaction1234), updatedEntityVersion));
+  List<EventWithMetadata> debitedEventsWithIds = Collections.singletonList(new EventWithMetadata(new AccountDebitedEvent(DEBIT_AMOUNT, transaction1234), updatedEntityVersion, Optional.empty()));
 
   private List<Event> creationAndUpdateEvents = Stream.concat(creationEvents.stream(), debitedEvents.stream()).collect(Collectors.toList());
   private List<EventWithMetadata> creationAndUpdateEventsWithIds = Stream.concat(creationEventsWithIds.stream(), debitedEventsWithIds.stream()).collect(Collectors.toList());

@@ -5,19 +5,23 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.util.Optional;
+
 public class EventIdTypeAndData {
 
   private Int128 id;
   private String eventType;
   private String eventData;
+  private Optional<String> metadata;
 
   public EventIdTypeAndData() {
   }
 
-  public EventIdTypeAndData(Int128 id, String eventType, String eventData) {
+  public EventIdTypeAndData(Int128 id, String eventType, String eventData, Optional<String> metadata) {
     this.id = id;
     this.eventType = eventType;
     this.eventData = eventData;
+    this.metadata = metadata;
   }
 
   @Override
@@ -53,6 +57,14 @@ public class EventIdTypeAndData {
 
   public String getEventData() {
     return eventData;
+  }
+
+  public Optional<String> getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(Optional<String> metadata) {
+    this.metadata = metadata;
   }
 
   public void setEventData(String eventData) {

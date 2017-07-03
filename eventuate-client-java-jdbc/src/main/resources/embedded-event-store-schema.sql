@@ -8,7 +8,8 @@ create table events (
   event_data varchar,
   entity_type VARCHAR,
   entity_id VARCHAR,
-  triggering_event VARCHAR
+  triggering_event VARCHAR,
+  metadata VARCHAR
 );
 
 create table entities (

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,8 +67,6 @@ public abstract class AbstractAccountIntegrationTest {
 
     moneyTransferCommandSideEventHandler.getEvents().eventuallyContains(
             ctx -> AccountDebitedEvent.class.isInstance(ctx.getEvent()) && moneyTransferEntity.getEntityId().equals(((AccountDebitedEvent) ctx.getEvent()).getTransactionId()));
-
-    TimeUnit.SECONDS.sleep(10);
 
   }
 

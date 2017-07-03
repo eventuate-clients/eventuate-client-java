@@ -31,7 +31,8 @@ public interface SnapshotStrategy {
    *
    * @param clasz the aggregate class
    * @param snapshot the snapshot
+   * @param missingApplyEventMethodStrategy
    * @return the aggregate
    */
-  Aggregate recreateAggregate(Class<?> clasz, Snapshot snapshot);
+  Aggregate recreateAggregate(Class<?> clasz, Snapshot snapshot, MissingApplyEventMethodStrategy missingApplyEventMethodStrategy);
 }

@@ -8,11 +8,12 @@ import org.junit.Test;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class RestApiComplianceTest extends AbstractApiComplianceTest {
 
 
-  List<EventTypeAndData> events = Collections.singletonList(new EventTypeAndData("MyEventType", "MyEventData"));
+  List<EventTypeAndData> events = Collections.singletonList(new EventTypeAndData("MyEventType", "MyEventData", Optional.empty()));
 
   @Test
   public void createEntityRequestShouldConform() throws FileNotFoundException {
@@ -42,6 +43,6 @@ public class RestApiComplianceTest extends AbstractApiComplianceTest {
 
   @Test
   public void getEntityResponseShouldConform() throws FileNotFoundException {
-    shouldConformTo(new GetEntityResponse(Collections.singletonList(new EventIdTypeAndData(Int128.fromString("1-1"), "EventType", "EventData"))), "get-response.json");
+    shouldConformTo(new GetEntityResponse(Collections.singletonList(new EventIdTypeAndData(Int128.fromString("1-1"), "EventType", "EventData", Optional.empty()))), "get-response.json");
   }
 }

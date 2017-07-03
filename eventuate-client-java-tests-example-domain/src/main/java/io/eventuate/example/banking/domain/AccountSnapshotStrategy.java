@@ -5,6 +5,7 @@ import io.eventuate.Aggregates;
 import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
 import io.eventuate.Int128;
+import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.Snapshot;
 import io.eventuate.SnapshotStrategy;
 
@@ -25,11 +26,11 @@ public class AccountSnapshotStrategy implements SnapshotStrategy {
   }
 
   @Override
-  public Aggregate recreateAggregate(Class<?> clasz, Snapshot snapshot) {
+  public Aggregate recreateAggregate(Class<?> clasz, Snapshot snapshot, MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
     AccountSnapshot accountSnapshot = (AccountSnapshot) snapshot;
     Account aggregate = new Account();
     List<Event> events = aggregate.process(new CreateAccountCommand(accountSnapshot.getBalance()));
-    Aggregates.applyEventsToMutableAggregate(aggregate, events);
+    Aggregates.applyEventsToMutableAggregate(aggregate, events, missingApplyEventMethodStrategy);
     return aggregate;
   }
 }

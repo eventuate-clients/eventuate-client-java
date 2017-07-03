@@ -22,8 +22,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
   }
 
   @Override
-  public Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot) {
+  public Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot, MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
     SnapshotStrategy strategy = strategies.get(clasz);
-    return strategy.recreateAggregate(clasz, snapshot);
+    return strategy.recreateAggregate(clasz, snapshot, missingApplyEventMethodStrategy);
   }
 }

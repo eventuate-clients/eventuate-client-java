@@ -2,6 +2,9 @@ package io.eventuate;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.util.Map;
+import java.util.Optional;
+
 public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
 
   private String entityId;
@@ -10,14 +13,16 @@ public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
   private Integer swimlane;
   private final Long offset;
   private final EventContext eventContext;
+  private Optional<Map<String, String>> eventMetadata;
 
-  public DispatchedEvent(String entityId, Int128 eventId, T event, Integer swimlane, Long offset, EventContext eventContext) {
+  public DispatchedEvent(String entityId, Int128 eventId, T event, Integer swimlane, Long offset, EventContext eventContext, Optional<Map<String, String>> eventMetadata) {
     this.entityId = entityId;
     this.eventId = eventId;
     this.event = event;
     this.swimlane = swimlane;
     this.offset = offset;
     this.eventContext = eventContext;
+    this.eventMetadata = eventMetadata;
   }
 
   @Override
@@ -58,5 +63,10 @@ public class DispatchedEvent<T extends Event> implements EventEnvelope<T> {
   @Override
   public EventContext getEventContext() {
     return eventContext;
+  }
+
+  @Override
+  public Optional<Map<String, String>> getEventMetadata() {
+    return eventMetadata;
   }
 }

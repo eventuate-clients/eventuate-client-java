@@ -4,6 +4,8 @@ import io.eventuate.EventContext;
 import io.eventuate.Int128;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.util.Optional;
+
 public class SerializedEvent {
   private Int128 id;
   private String entityId;
@@ -13,8 +15,9 @@ public class SerializedEvent {
   private Integer swimLane;
   private Long offset;
   private EventContext eventContext;
+  private Optional<String> metadata;
 
-  public SerializedEvent(Int128 id, String entityId, String entityType, String eventData, String eventType, Integer swimLane, Long offset, EventContext eventContext) {
+  public SerializedEvent(Int128 id, String entityId, String entityType, String eventData, String eventType, Integer swimLane, Long offset, EventContext eventContext, Optional<String> metadata) {
     this.id = id;
     this.entityId = entityId;
     this.entityType = entityType;
@@ -23,6 +26,7 @@ public class SerializedEvent {
     this.swimLane = swimLane;
     this.offset = offset;
     this.eventContext = eventContext;
+    this.metadata = metadata;
   }
 
   @Override
@@ -85,5 +89,9 @@ public class SerializedEvent {
 
   public EventContext getEventContext() {
     return eventContext;
+  }
+
+  public Optional<String> getMetadata() {
+    return metadata;
   }
 }

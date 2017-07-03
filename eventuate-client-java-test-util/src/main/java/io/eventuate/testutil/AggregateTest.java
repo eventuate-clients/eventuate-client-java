@@ -1,6 +1,8 @@
 package io.eventuate.testutil;
 
 import io.eventuate.Aggregates;
+import io.eventuate.Command;
+import io.eventuate.DefaultMissingApplyEventMethodStrategy;
 import io.eventuate.Event;
 import io.eventuate.ReflectiveMutableCommandProcessingAggregate;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -8,7 +10,6 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -18,7 +19,7 @@ import static org.junit.Assert.fail;
  * @param <CT> aggregate's command type
  * @see ReflectiveMutableCommandProcessingAggregate
  */
-public abstract class AggregateTest<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT> {
+public abstract class AggregateTest<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT extends Command> {
 
   private Class<T> aggregateClass;
   protected T aggregate;
@@ -53,7 +54,7 @@ public abstract class AggregateTest<T extends ReflectiveMutableCommandProcessing
   protected List<Event> update(CT cmd) {
     this.command = cmd;
     events = aggregate.processCommand(cmd);
-    Aggregates.applyEventsToMutableAggregate(aggregate, events);
+    Aggregates.applyEventsToMutableAggregate(aggregate, events, DefaultMissingApplyEventMethodStrategy.INSTANCE);
     return events;
   }
 

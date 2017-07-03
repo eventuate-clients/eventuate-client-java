@@ -2,7 +2,7 @@ package io.eventuate;
 
 public class EventuateApplyEventFailedUnexpectedlyException extends EventuateClientException {
 
-  public EventuateApplyEventFailedUnexpectedlyException(ReflectiveOperationException e) {
+  public EventuateApplyEventFailedUnexpectedlyException(Throwable e) {
     super(e);
   }
 

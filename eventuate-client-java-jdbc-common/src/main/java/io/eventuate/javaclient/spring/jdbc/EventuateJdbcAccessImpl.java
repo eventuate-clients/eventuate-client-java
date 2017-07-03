@@ -60,9 +60,11 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
 
     for (EventIdTypeAndData event : eventsWithIds)
-      jdbcTemplate.update("INSERT INTO events (event_id, event_type, event_data, entity_type, entity_id, triggering_event) VALUES (?, ?, ?, ?, ?, ?)",
+      jdbcTemplate.update("INSERT INTO events (event_id, event_type, event_data, entity_type, entity_id, triggering_event, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
               event.getId().asString(), event.getEventType(), event.getEventData(), aggregateType, entityId,
-              saveOptions.flatMap(AggregateCrudSaveOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
+              saveOptions.flatMap(AggregateCrudSaveOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null),
+              event.getMetadata().orElse(null)
+              );
 
     return new SaveUpdateResult(new EntityIdVersionAndEventIds(entityId, entityVersion, eventsWithIds.stream().map(EventIdTypeAndData::getId).collect(Collectors.toList())),
             new PublishableEvents(aggregateType, entityId, eventsWithIds));
@@ -74,7 +76,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   }
 
   private EventIdTypeAndData toEventWithId(EventTypeAndData eventTypeAndData) {
-    return new EventIdTypeAndData(idGenerator.genId(), eventTypeAndData.getEventType(), eventTypeAndData.getEventData());
+    return new EventIdTypeAndData(idGenerator.genId(), eventTypeAndData.getEventType(), eventTypeAndData.getEventData(), eventTypeAndData.getMetadata());
   }
 
   private final RowMapper<EventAndTrigger> eventAndTriggerRowMapper = (rs, rowNum) -> {
@@ -83,7 +85,8 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
     String eventData = rs.getString("event_data");
     String entityId1 = rs.getString("entity_id");
     String triggeringEvent = rs.getString("triggering_event");
-    return new EventAndTrigger(new EventIdTypeAndData(Int128.fromString(eventId), eventType, eventData), triggeringEvent);
+    Optional<String> metadata = Optional.ofNullable(rs.getString("metadata"));
+    return new EventAndTrigger(new EventIdTypeAndData(Int128.fromString(eventId), eventType, eventData, metadata), triggeringEvent);
   };
 
   @Override
@@ -212,13 +215,15 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
 
     for (EventIdTypeAndData event : eventsWithIds)
-      jdbcTemplate.update("INSERT INTO events (event_id, event_type, event_data, entity_type, entity_id, triggering_event) VALUES (?, ?, ?, ?, ?, ?)",
+      jdbcTemplate.update("INSERT INTO events (event_id, event_type, event_data, entity_type, entity_id, triggering_event, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
               event.getId().asString(),
               event.getEventType(),
               event.getEventData(),
               entityType,
               entityId,
-              updateOptions.flatMap(AggregateCrudUpdateOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null));
+              updateOptions.flatMap(AggregateCrudUpdateOptions::getTriggeringEvent).map(EventContext::getEventToken).orElse(null),
+              event.getMetadata().orElse(null));
+
 
     return new SaveUpdateResult(new EntityIdVersionAndEventIds(entityId,
             updatedEntityVersion,

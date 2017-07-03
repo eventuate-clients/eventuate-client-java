@@ -2,6 +2,7 @@ package io.eventuate.javaclient.domain;
 
 import io.eventuate.*;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -48,6 +49,11 @@ class EventHandlerContextImpl implements EventHandlerContext<Event> {
 
   public EventContext getEventContext() {
     return de.getEventContext();
+  }
+
+  @Override
+  public Optional<Map<String, String>> getEventMetadata() {
+    return de.getEventMetadata();
   }
 
 

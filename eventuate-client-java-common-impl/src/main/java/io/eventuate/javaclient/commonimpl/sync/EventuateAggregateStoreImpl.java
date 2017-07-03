@@ -10,18 +10,13 @@ import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
 import io.eventuate.Int128;
+import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.SaveOptions;
 import io.eventuate.Snapshot;
 import io.eventuate.SnapshotManager;
 import io.eventuate.SubscriberOptions;
 import io.eventuate.UpdateOptions;
-import io.eventuate.javaclient.commonimpl.AggregateCrudMapping;
-import io.eventuate.javaclient.commonimpl.DefaultSerializedEventDeserializer;
-import io.eventuate.javaclient.commonimpl.EntityIdVersionAndEventIds;
-import io.eventuate.javaclient.commonimpl.EventTypeAndData;
-import io.eventuate.javaclient.commonimpl.LoadedEvents;
-import io.eventuate.javaclient.commonimpl.SerializedEventDeserializer;
-import io.eventuate.javaclient.commonimpl.SerializedSnapshotWithVersion;
+import io.eventuate.javaclient.commonimpl.*;
 import io.eventuate.sync.EventuateAggregateStore;
 
 import java.util.List;
@@ -32,10 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudFindOptions;
-import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudSaveOptions;
-import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toAggregateCrudUpdateOptions;
-import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.toSerializedEventsWithIds;
+import static io.eventuate.javaclient.commonimpl.AggregateCrudMapping.*;
 import static io.eventuate.javaclient.commonimpl.EventuateActivity.activityLogger;
 
 public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
@@ -44,11 +36,13 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   private AggregateEvents aggregateEvents;
   private SnapshotManager snapshotManager;
   private SerializedEventDeserializer serializedEventDeserializer = new DefaultSerializedEventDeserializer();
+  private MissingApplyEventMethodStrategy missingApplyEventMethodStrategy;
 
-  public EventuateAggregateStoreImpl(AggregateCrud aggregateCrud, AggregateEvents aggregateEvents, SnapshotManager snapshotManager) {
+  public EventuateAggregateStoreImpl(AggregateCrud aggregateCrud, AggregateEvents aggregateEvents, SnapshotManager snapshotManager, MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
     this.aggregateCrud = aggregateCrud;
     this.aggregateEvents = aggregateEvents;
     this.snapshotManager = snapshotManager;
+    this.missingApplyEventMethodStrategy = missingApplyEventMethodStrategy;
   }
 
   public void setSerializedEventDeserializer(SerializedEventDeserializer serializedEventDeserializer) {
@@ -67,7 +61,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   @Override
   public <T extends Aggregate<T>> EntityIdAndVersion save(Class<T> clasz, List<Event> events, Optional<SaveOptions> saveOptions) {
-    List<EventTypeAndData> serializedEvents = events.stream().map(AggregateCrudMapping::toEventTypeAndData).collect(Collectors.toList());
+    Optional<String> serializedMetadata = saveOptions.flatMap(SaveOptions::getEventMetadata).map(JSonMapper::toJson);
+    List<EventTypeAndData> serializedEvents = events.stream().map(event -> toEventTypeAndData(event, serializedMetadata)).collect(Collectors.toList());
     try {
       EntityIdVersionAndEventIds result = aggregateCrud.save(clasz.getName(), serializedEvents, toAggregateCrudSaveOptions(saveOptions));
       if (activityLogger.isDebugEnabled())
@@ -104,8 +99,8 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
               le.getSnapshot().map(SerializedSnapshotWithVersion::getEntityVersion),
               eventsWithIds,
               le.getSnapshot().map(ss ->
-                      Aggregates.applyEventsToMutableAggregate((T)snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot())), events))
-                      .orElseGet( () -> Aggregates.recreateAggregate(clasz, events)));
+                      Aggregates.applyEventsToMutableAggregate((T) snapshotManager.recreateFromSnapshot(clasz, AggregateCrudMapping.toSnapshot(ss.getSerializedSnapshot()), missingApplyEventMethodStrategy), events, missingApplyEventMethodStrategy))
+                      .orElseGet(() -> Aggregates.recreateAggregate(clasz, events, missingApplyEventMethodStrategy)));
     } catch (RuntimeException e) {
       if (activityLogger.isDebugEnabled())
         activityLogger.trace(String.format("Find entity failed: %s %s", clasz.getName(), entityId), e);
@@ -124,11 +119,11 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
   }
 
 
-
   @Override
   public <T extends Aggregate<T>> EntityIdAndVersion update(Class<T> clasz, EntityIdAndVersion entityIdAndVersion, List<Event> events, Optional<UpdateOptions> updateOptions) {
     try {
-      List<EventTypeAndData> serializedEvents = events.stream().map(AggregateCrudMapping::toEventTypeAndData).collect(Collectors.toList());
+      Optional<String> serializedEventMetadata = updateOptions.flatMap(UpdateOptions::getEventMetadata).map(JSonMapper::toJson);
+      List<EventTypeAndData> serializedEvents = events.stream().map(event -> toEventTypeAndData(event, serializedEventMetadata)).collect(Collectors.toList());
       EntityIdVersionAndEventIds result = aggregateCrud.update(new EntityIdAndType(entityIdAndVersion.getEntityId(), clasz.getName()),
               entityIdAndVersion.getEntityVersion(),
               serializedEvents,
@@ -167,7 +162,7 @@ public class EventuateAggregateStoreImpl implements EventuateAggregateStore {
 
   @Override
   public Aggregate recreateFromSnapshot(Class<?> clasz, Snapshot snapshot) {
-    return snapshotManager.recreateFromSnapshot(clasz, snapshot);
+    return snapshotManager.recreateFromSnapshot(clasz, snapshot, missingApplyEventMethodStrategy);
   }
 
 

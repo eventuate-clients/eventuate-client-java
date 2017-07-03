@@ -2,6 +2,7 @@ package io.eventuate.javaclient.spring.jdbc;
 
 import io.eventuate.EntityWithIdAndVersion;
 import io.eventuate.EntityWithMetadata;
+import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.example.banking.domain.Account;
 import io.eventuate.example.banking.domain.AccountCommand;
 import io.eventuate.example.banking.domain.AccountSnapshotStrategy;
@@ -56,7 +57,7 @@ public class JdbcAutoConfigurationWithSnapshotsIntegrationTest  {
 
     assertEquals(initialBalance.subtract(debitAmount), findResult.getEntity().getBalance());
 
-    verify(accountSnapshotStrategy).recreateAggregate(any(), any());
+    verify(accountSnapshotStrategy).recreateAggregate(any(), any(), any(MissingApplyEventMethodStrategy.class));
 
     verifyNoMoreInteractions(accountSnapshotStrategy);
 

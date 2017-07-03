@@ -35,7 +35,7 @@ public class EventuateEmbeddedTestAggregateStore extends AbstractJdbcAggregateCr
             subscription.handler.apply(new SerializedEvent(event.getId(), aggregateId, aggregateType, event.getEventData(), event.getEventType(),
                     aggregateId.hashCode() % 8,
                     eventOffset.getAndIncrement(),
-                    new EventContext(event.getId().asString())));
+                    new EventContext(event.getId().asString()), event.getMetadata()));
         }
       }
   }

@@ -4,6 +4,7 @@ package io.eventuate.sync;
 import io.eventuate.Aggregates;
 import io.eventuate.Command;
 import io.eventuate.CommandProcessingAggregate;
+import io.eventuate.DefaultMissingApplyEventMethodStrategy;
 import io.eventuate.DuplicateTriggeringEventException;
 import io.eventuate.EntityIdAndVersion;
 import io.eventuate.EntityWithIdAndVersion;
@@ -12,6 +13,7 @@ import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
 import io.eventuate.Int128;
+import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.OptimisticLockingException;
 import io.eventuate.SaveOptions;
 import io.eventuate.UpdateOptions;
@@ -52,6 +54,9 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   private Class<T> clasz;
   private EventuateAggregateStore aggregateStore;
 
+  private MissingApplyEventMethodStrategy missingApplyEventMethodStrategy = new DefaultMissingApplyEventMethodStrategy();
+
+
   /**
    * Constructs a new AggregateRepository for the specified aggregate class and aggregate store
    *
@@ -61,6 +66,10 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   public AggregateRepository(Class<T> clasz, EventuateAggregateStore aggregateStore) {
     this.clasz = clasz;
     this.aggregateStore = aggregateStore;
+  }
+
+  public void setMissingApplyEventMethodStrategy(MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
+    this.missingApplyEventMethodStrategy = missingApplyEventMethodStrategy;
   }
 
   /**
@@ -88,7 +97,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
       throw new RuntimeException(e);
     }
     List<Event> events = aggregate.processCommand(cmd);
-    Aggregates.applyEventsToMutableAggregate(aggregate, events);
+    Aggregates.applyEventsToMutableAggregate(aggregate, events, missingApplyEventMethodStrategy);
 
     return new EntityWithIdAndVersion<>(aggregateStore.save(clasz, events, saveOptions), aggregate);
   }
@@ -167,7 +176,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
         return entityWithMetadata.toEntityWithIdAndVersion();
       } else {
         try {
-          Aggregates.applyEventsToMutableAggregate(aggregate, events);
+          Aggregates.applyEventsToMutableAggregate(aggregate, events, missingApplyEventMethodStrategy);
           EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), events,
                   withPossibleSnapshot(updateOptions, aggregate, entityWithMetadata.getSnapshotVersion(), entityWithMetadata.getEvents(), events));
           return new EntityWithIdAndVersion<>(entityIdAndVersion, aggregate);

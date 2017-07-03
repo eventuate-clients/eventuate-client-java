@@ -8,16 +8,13 @@ public class AggregateCrudSaveOptions {
 
   private final Optional<String> entityId;
   private final Optional<EventContext> triggeringEvent;
-  private final Optional<String> eventMetadata;
 
   public AggregateCrudSaveOptions() {
     this.entityId = Optional.empty();
     this.triggeringEvent = Optional.empty();
-    this.eventMetadata = Optional.empty();
   }
 
-  public AggregateCrudSaveOptions(Optional<String> eventMetadata, Optional<EventContext> triggeringEvent, Optional<String> entityId) {
-    this.eventMetadata = eventMetadata;
+  public AggregateCrudSaveOptions(Optional<EventContext> triggeringEvent, Optional<String> entityId) {
     this.triggeringEvent = triggeringEvent;
     this.entityId = entityId;
   }
@@ -30,16 +27,14 @@ public class AggregateCrudSaveOptions {
     return triggeringEvent;
   }
 
-  public Optional<String> getEventMetadata() {
-    return eventMetadata;
-  }
 
   public AggregateCrudSaveOptions withEventContext(EventContext ectx) {
-    return new AggregateCrudSaveOptions(this.eventMetadata, Optional.of(ectx), this.entityId);
+    return new AggregateCrudSaveOptions(Optional.of(ectx), this.entityId);
 
   }
 
   public AggregateCrudSaveOptions withId(String entityId) {
-    return new AggregateCrudSaveOptions(this.eventMetadata, this.triggeringEvent, Optional.of(entityId));
+    return new AggregateCrudSaveOptions(this.triggeringEvent, Optional.of(entityId));
   }
+
 }

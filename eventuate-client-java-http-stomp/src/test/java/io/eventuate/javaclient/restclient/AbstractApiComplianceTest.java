@@ -38,7 +38,7 @@ public class AbstractApiComplianceTest {
       schema.validate(new JSONObject(json)); // throws a ValidationException if this object is invalid
     } catch (ValidationException e) {
       StringBuffer sb = new StringBuffer();
-      sb.append(request).append(" did not conform to ").append(schemaFile).append('\n');
+      sb.append(json).append(" did not conform to ").append(schemaFile).append('\n');
       sb.append(e.getMessage());
       for (ValidationException ee : e.getCausingExceptions())
         sb.append("\n").append(ee.getMessage());

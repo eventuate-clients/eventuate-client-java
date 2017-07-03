@@ -265,7 +265,8 @@ public class EventuateRESTClientPactTest {
   }
 
   private CompletableFuture<EntityIdVersionAndEventIds> save() {
-    return client.save(RequestResponseJsonObjects.aggregateType, Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
+    return client.save(RequestResponseJsonObjects.aggregateType,
+            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData, Optional.empty())), Optional.empty());
   }
 
   @Test
@@ -297,14 +298,17 @@ public class EventuateRESTClientPactTest {
   private CompletableFuture<EntityIdVersionAndEventIds> update() {
     return client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
-            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)), Optional.empty());
+            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData, Optional.empty())), Optional.empty());
   }
 
   @Test
   @PactVerification(fragment="find")
   public void shouldFind() throws URISyntaxException, ExecutionException, InterruptedException {
     LoadedEvents findResult = find().get();
-    assertEquals(Collections.singletonList(new EventIdTypeAndData(new Int128(8,9), RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)), findResult.getEvents());
+    assertEquals(Collections.singletonList(new EventIdTypeAndData(new Int128(8,9),
+            RequestResponseJsonObjects.createdEvent,
+            RequestResponseJsonObjects.eventData,
+            null)), findResult.getEvents());
   }
 
   private CompletableFuture<LoadedEvents> find() {
@@ -356,7 +360,7 @@ public class EventuateRESTClientPactTest {
 
   private CompletableFuture<EntityIdVersionAndEventIds> saveWithId() {
     return client.save(RequestResponseJsonObjects.aggregateType,
-            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)),
+            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData, Optional.empty())),
             Optional.of(new AggregateCrudSaveOptions().withId(RequestResponseJsonObjects.createId)));
   }
 
@@ -388,7 +392,7 @@ public class EventuateRESTClientPactTest {
   @PactVerification(fragment="findWithTriggeringEvent")
   public void shouldFindWithTriggeringEvent() throws URISyntaxException, ExecutionException, InterruptedException {
     LoadedEvents findResult = findWithEventContext().get();
-    assertEquals(Collections.singletonList(new EventIdTypeAndData(new Int128(8,9), RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData)), findResult.getEvents());
+    assertEquals(Collections.singletonList(new EventIdTypeAndData(new Int128(8,9), RequestResponseJsonObjects.createdEvent, RequestResponseJsonObjects.eventData, null)), findResult.getEvents());
   }
 
   private CompletableFuture<LoadedEvents> findWithEventContext() {
@@ -417,7 +421,7 @@ public class EventuateRESTClientPactTest {
   private CompletableFuture<EntityIdVersionAndEventIds> updateWithEventContext() {
     return client.update(new EntityIdAndType(RequestResponseJsonObjects.ENTITY_ID, RequestResponseJsonObjects.aggregateType),
             new Int128(5, 6),
-            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData)),
+            Collections.singletonList(new EventTypeAndData(RequestResponseJsonObjects.debitedEvent, RequestResponseJsonObjects.eventData, Optional.empty())),
             Optional.of(new AggregateCrudUpdateOptions().withTriggeringEvent(RequestResponseJsonObjects.makeEventContext())));
   }
 

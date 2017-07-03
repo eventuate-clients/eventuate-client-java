@@ -45,7 +45,7 @@ import java.util.List;
  * }  
  *</pre>
  */
-public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT>
+public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMutableCommandProcessingAggregate<T, CT>, CT extends Command>
         implements CommandProcessingAggregate<T, CT> {
 
   /**
@@ -58,7 +58,11 @@ public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMut
   public T applyEvent(Event event) {
     try {
       getClass().getMethod("apply", event.getClass()).invoke(this, event);
-    } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+    } catch (InvocationTargetException e) {
+      throw new EventuateApplyEventFailedUnexpectedlyException(e.getCause());
+    } catch (NoSuchMethodException e) {
+      throw new MissingApplyMethodException(e, event);
+    } catch (IllegalAccessException e) {
       throw new EventuateApplyEventFailedUnexpectedlyException(e);
     }
     return (T)this;
@@ -75,7 +79,9 @@ public class ReflectiveMutableCommandProcessingAggregate<T extends ReflectiveMut
       return (List<Event>) getClass().getMethod("process", cmd.getClass()).invoke(this, cmd);
     } catch (InvocationTargetException e) {
       throw new EventuateCommandProcessingFailedException(e.getCause());
-    } catch (IllegalAccessException | NoSuchMethodException e) {
+    } catch (NoSuchMethodException e) {
+      throw new MissingProcessMethodException(e, cmd);
+    } catch (IllegalAccessException e) {
       throw new EventuateCommandProcessingFailedUnexpectedlyException(e);
     }
   }

@@ -1,5 +1,8 @@
 package io.eventuate;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * A container of an event and it's metadata
  *
@@ -55,4 +58,6 @@ public interface EventEnvelope<T extends Event> {
    * @see FindOptions
    */
   EventContext getEventContext();
+
+  Optional<Map<String, String>> getEventMetadata();
 }

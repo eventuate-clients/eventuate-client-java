@@ -1,5 +1,6 @@
 package io.eventuate.testutil;
 
+import io.eventuate.Command;
 import io.eventuate.CommandProcessingAggregate;
 import io.eventuate.EntityWithIdAndVersion;
 import org.mockito.ArgumentCaptor;
@@ -11,7 +12,7 @@ import org.mockito.ArgumentCaptor;
  * @param <CT> The aggregate's command type
  * @param <C> The type of the expected command
  */
-public class SaveInvocation<T extends CommandProcessingAggregate<T, CT>, CT, C extends CT>  implements AggregateOperationInvocation<T,CT, C> {
+public class SaveInvocation<T extends CommandProcessingAggregate<T, CT>, CT extends Command, C extends CT>  implements AggregateOperationInvocation<T,CT, C> {
   private final ArgumentCaptor<C> commandArg;
   private final EntityWithIdAndVersion<T> createdEntity;
 
