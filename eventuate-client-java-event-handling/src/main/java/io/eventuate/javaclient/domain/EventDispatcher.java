@@ -3,7 +3,6 @@ package io.eventuate.javaclient.domain;
 import io.eventuate.CompletableFutureUtil;
 import io.eventuate.DispatchedEvent;
 import io.eventuate.Event;
-import io.eventuate.javaclient.commonimpl.EventuateActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ public class EventDispatcher {
         });
       }
       else
-        return eventHandler.dispatch(de);
+        return dispatchEvent(de, eventHandler);
     } else {
       RuntimeException ex = new RuntimeException("No handler for event - subscriberId: " + subscriberId + ", " + de.getEventType());
       logger.error("dispatching failure", ex);
@@ -45,5 +44,9 @@ public class EventDispatcher {
       completableFuture.completeExceptionally(ex);
       return completableFuture;
     }
+  }
+
+  private CompletableFuture<?> dispatchEvent(DispatchedEvent<Event> de, EventHandler eventHandler) {
+    return eventHandler.dispatch(de);
   }
 }

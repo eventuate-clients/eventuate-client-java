@@ -43,6 +43,7 @@ public class EventuateRESTClientTest {
   @Before
   public void before() {
     mockHttpServer = new MockHttpServer(vertx, port);
+    mockHttpServer.waitUntilListening();
   }
 
   @After
