@@ -16,5 +16,5 @@ dependencies {
   testCompile 'au.com.dius:pact-jvm-consumer-junit_2.11:3.2.4'
   testCompile "io.reactivex:rxjava:$rxJavaVersion"
   testCompile "io.eventuate.apispec:eventuate-api-spec:0.1"
-
+  testCompile 'org.hamcrest:hamcrest-library:1.3'
 }

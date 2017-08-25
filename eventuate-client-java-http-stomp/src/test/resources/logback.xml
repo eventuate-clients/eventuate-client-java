@@ -16,4 +16,6 @@
     </logger>
     <logger name="io.netty" level='debug'>
     </logger>
+    <logger name="io.eventuate" level='trace'>
+    </logger>
 </configuration>

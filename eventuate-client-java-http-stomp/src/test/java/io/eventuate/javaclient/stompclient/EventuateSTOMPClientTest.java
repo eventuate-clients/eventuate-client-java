@@ -3,20 +3,35 @@ package io.eventuate.javaclient.stompclient;
 
 import io.eventuate.Int128;
 import io.vertx.core.Vertx;
-import org.junit.*;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class EventuateSTOMPClientTest {
+
+  private Logger logger = LoggerFactory.getLogger(getClass());
 
   private EventuateSTOMPClient client;
   private TrackingStompServer server;
@@ -24,6 +39,8 @@ public class EventuateSTOMPClientTest {
   private static Vertx vertx;
   private static int port;
   private BlockingQueue<Int128> ids;
+  private String mySubId = "MySubId";
+  private String subId;
 
   @Before
   public void setUp() {
@@ -47,10 +64,21 @@ public class EventuateSTOMPClientTest {
       server.close();
   }
 
+  private void makeClientAndSubscribeSync() throws URISyntaxException, ExecutionException, InterruptedException {
+    makeClient();
+    subscribeSync();
+  }
+
   private void makeClient() throws URISyntaxException {
     client = new EventuateSTOMPClient(vertx, credentials, new URI("stomp://localhost:" + port));
+  }
 
-    client.subscribe("MySubId",
+  private void subscribeSync() throws InterruptedException, ExecutionException {
+    subId = subscribeAsync(mySubId).get();
+  }
+
+  private CompletableFuture<String> subscribeAsync(String subscribeId) {
+    return (CompletableFuture<String>) client.subscribe(subscribeId,
             Collections.singletonMap("MyEntityType",
                     Collections.singleton("MyEvent")),
             null, se -> {
@@ -92,13 +120,18 @@ public class EventuateSTOMPClientTest {
 
     makeServer();
 
-    makeClient();
+    makeClientAndSubscribeSync();
 
     assertConnected();
 
     server.assertSubscribed();
 
     List<Int128> receivedIds = new ArrayList<>();
+
+    logger.debug("Sending message");
+    for (int i = 0; i < 500; i++) {
+      server.sendMessage(subId, "0-" + i);
+    }
 
     while (receivedIds.size() != 500) {
       Int128 x = ids.poll(20, TimeUnit.SECONDS);
@@ -128,9 +161,10 @@ public class EventuateSTOMPClientTest {
   }
 
   @Test
-  public void shouldRepeatedlyAttemptToConnect() throws InterruptedException, URISyntaxException, IOException, ExecutionException {
+  public void shouldRepeatedlyAttemptToConnect() throws InterruptedException, URISyntaxException, IOException, ExecutionException, TimeoutException {
 
     makeClient();
+    subscribeAsync(mySubId);
 
     TimeUnit.SECONDS.sleep(5);
 
@@ -146,10 +180,10 @@ public class EventuateSTOMPClientTest {
   }
 
   @Test
-  public void trySubscribing() throws InterruptedException, URISyntaxException, IOException, ExecutionException {
+  public void trySubscribing() throws InterruptedException, URISyntaxException, IOException, ExecutionException, TimeoutException {
 
     makeServer();
-    makeClient();
+    makeClientAndSubscribeSync();
 
     assertConnected();
 
@@ -161,9 +195,7 @@ public class EventuateSTOMPClientTest {
             null, se -> {
               System.out.print("Y");
               return CompletableFuture.completedFuture("x");
-            });
-
-    TimeUnit.SECONDS.sleep(5);
+            }).get(5, TimeUnit.SECONDS);
 
     client.close();
 
@@ -177,7 +209,7 @@ public class EventuateSTOMPClientTest {
 
     makeServer();
 
-    makeClient();
+    makeClientAndSubscribeSync();
 
     assertConnected();
 
@@ -186,6 +218,82 @@ public class EventuateSTOMPClientTest {
     client.close();
 
     server.assertClientIsDisconnected();
+  }
+
+
+  @Test
+  public void shouldProcessTwoSubscriptions() throws Exception {
+
+    makeServer();
+
+    makeClient();
+
+    CompletableFuture sub1cf = new CompletableFuture();
+
+    String subId1 = ((CompletableFuture<String>) client.subscribe("mySubscribeId1",
+            Collections.singletonMap("MyEntityType",
+                    Collections.singleton("MyEvent")),
+            null, se -> {
+              ids.add(se.getId());
+              return sub1cf;
+            })).get(4, TimeUnit.SECONDS);
+
+    assertConnected();
+
+    CompletableFuture sub2cf = new CompletableFuture();
+
+    String subId2 = ((CompletableFuture<String>) client.subscribe("mySubscribeId2",
+            Collections.singletonMap("MyEntityType",
+                    Collections.singleton("MyEvent")),
+            null, se -> {
+              ids.add(se.getId());
+              return sub2cf;
+            })).get(4, TimeUnit.SECONDS);
+
+
+    server.assertSubscribed();
+
+    List<Int128> receivedIds = new ArrayList<>();
+
+    server.sendMessage(subId1, "1-2");
+
+    while (receivedIds.size() != 1) {
+      Int128 x = ids.poll(20, TimeUnit.SECONDS);
+      assertNotNull(x);
+      receivedIds.add(x);
+    }
+
+    server.sendMessage(subId2, "3-4");
+
+    while (receivedIds.size() != 2) {
+      Int128 x = ids.poll(20, TimeUnit.SECONDS);
+      assertNotNull(x);
+      receivedIds.add(x);
+    }
+
+    sub2cf.complete(null);
+
+    server.assertAcked(1);
+
+    sub1cf.complete(null);
+
+    server.assertAcked(2);
+
+    server.close();
+
+
+    assertDisconnected();
+
+
+    makeServer();
+    assertConnected();
+
+    server.assertSubscribed();
+
+    client.close();
+
+
+
   }
 
   }

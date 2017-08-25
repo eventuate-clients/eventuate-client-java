@@ -140,10 +140,8 @@ public class EventuateSTOMPClient implements AggregateEvents {
     handleEvent(sub, serializedEvent, frame.getAck());
   }
 
-  private AckOrderTracker ackOrderTracker = new AckOrderTracker();
-
   private void handleEvent(Subscription sub, SerializedEvent serializedEvent, String ackHeader) {
-    ackOrderTracker.add(ackHeader);
+    sub.ackOrderTracker.add(ackHeader);
 
     sub.handler.apply(serializedEvent).handle((result, e) -> {
       if (e != null) {
@@ -152,12 +150,12 @@ public class EventuateSTOMPClient implements AggregateEvents {
       } else {
         logger.trace("Successfully completed handler for subscription {} for event {}", sub.subscriberId, serializedEvent);
         context.runOnContext(ignored -> {
-          for (String ah : ackOrderTracker.ack(ackHeader)) {
+          for (String ah : sub.ackOrderTracker.ack(ackHeader)) {
             if (logger.isTraceEnabled())
               logger.trace("Sending acknowledgement: " + ah);
             state.connection.ack(ah);
           }
-          logger.trace("Pending ack headers {} {}", sub.subscriberId, ackOrderTracker.getPendingHeaders().size());
+          logger.trace("Pending ack headers {} {}", sub.subscriberId, sub.ackOrderTracker.getPendingHeaders().size());
         });
       }
       return null;
@@ -208,14 +206,18 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
   enum ConnectionStatus {UNCONNECTED, CONNECTED, CONNECTION_FAILED_WAITING_TO_RETRY, CLOSED, CONNECTING}
 
+  public AckOrderTracker oneAckOrderTracker = new AckOrderTracker();
+
   class Subscription {
     private String uniqueId = UUID.randomUUID().toString();
     private String subscriberId;
     private Map<String, Set<String>> aggregatesAndEvents;
     private Function<SerializedEvent, CompletableFuture<?>> handler;
-    private CompletableFuture<?> subscribeCompletedFuture = new CompletableFuture<>();
+    private CompletableFuture<Object> subscribeCompletedFuture = new CompletableFuture<>();
     private SubscriberOptions subscriberOptions;
     public String space;
+    public AckOrderTracker ackOrderTracker = oneAckOrderTracker;
+
 
     public Subscription(String subscriberId, String space, Map<String, Set<String>> aggregatesAndEvents, SubscriberOptions subscriberOptions, Function<SerializedEvent, CompletableFuture<?>> handler) {
       this.subscriberId = subscriberId;
@@ -234,6 +236,11 @@ public class EventuateSTOMPClient implements AggregateEvents {
       return subscriberOptions;
     }
 
+    public void noteSubscribed() {
+      ackOrderTracker = new AckOrderTracker();
+      if (!subscribeCompletedFuture.isDone())
+        subscribeCompletedFuture.complete(uniqueId);
+    }
   }
 
   class ConnectionState {
@@ -288,8 +295,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
             frame -> frameHandler(frame, sub), rh -> {
               if (logger.isInfoEnabled())
                 logger.debug("Subscribed: " + sub.subscriberId);
-              if (!sub.getSubscribeCompletedFuture().isDone())
-                sub.getSubscribeCompletedFuture().complete(null);
+              sub.noteSubscribed();
             });
 
   }
