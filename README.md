@@ -1,5 +1,5 @@
 
-= Eventuate Java Client
+# Eventuate Java Client
 
 [ ![Download](https://api.bintray.com/packages/eventuateio-oss/eventuate-maven-release/eventuate-client-java/images/download.svg) ](https://bintray.com/eventuateio-oss/eventuate-maven-release/eventuate-client-java/_latestVersion)
 
