@@ -1,11 +1,11 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventuateAggregateStore;
-import io.eventuate.SnapshotManager;
-import io.eventuate.SnapshotManagerImpl;
-import io.eventuate.SnapshotStrategy;
-import io.eventuate.javaclient.domain.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.eventuate.javaclient.domain.EventHandlerProcessor;
+import io.eventuate.javaclient.domain.EventHandlerProcessorDispatchedEventReturningCompletableFuture;
+import io.eventuate.javaclient.domain.EventHandlerProcessorDispatchedEventReturningVoid;
+import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningCompletableFuture;
+import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningVoid;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,12 +38,12 @@ public class EventuateJavaClientDomainConfiguration {
   }
 
   @Bean
-  public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningVoid(EventuateAggregateStore aggregateStore) {
+  public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningVoid() {
     return new EventHandlerProcessorDispatchedEventReturningVoid();
   }
 
   @Bean
-  public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningCompletableFuture(EventuateAggregateStore aggregateStore) {
+  public EventHandlerProcessor eventHandlerProcessorDispatchedEventReturningCompletableFuture() {
     return new EventHandlerProcessorDispatchedEventReturningCompletableFuture();
   }
   @Bean

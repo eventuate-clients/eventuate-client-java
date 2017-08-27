@@ -4,6 +4,7 @@ import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.javaclient.commonimpl.adapters.SyncToAsyncAggregateCrudAdapter;
 import io.eventuate.javaclient.commonimpl.adapters.SyncToAsyncAggregateEventsAdapter;
+import io.eventuate.javaclient.eventhandling.exceptionhandling.EventuateClientScheduler;
 import io.eventuate.javaclient.spring.common.EventuateCommonConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,6 +46,11 @@ public class EmbeddedTestAggregateStoreConfiguration {
   @Bean
   public AggregateEvents aggregateEvents(io.eventuate.javaclient.commonimpl.sync.AggregateEvents aggregateEvents) {
     return new SyncToAsyncAggregateEventsAdapter(aggregateEvents);
+  }
+
+  @Bean
+  public EventuateClientScheduler eventHandlerRecoveryScheduler() {
+    return new JdkTimerBasedEventuateClientScheduler();
   }
 
 

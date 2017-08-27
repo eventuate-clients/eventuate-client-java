@@ -10,11 +10,14 @@ import io.eventuate.javaclient.domain.EventDispatcher;
 import io.eventuate.javaclient.domain.EventHandler;
 import io.eventuate.javaclient.domain.EventHandlerProcessor;
 import io.eventuate.javaclient.domain.SwimlaneBasedDispatcher;
+import io.eventuate.javaclient.eventhandling.exceptionhandling.EventDeliveryExceptionHandlerManagerImpl;
+import io.eventuate.javaclient.eventhandling.exceptionhandling.EventDeliveryExceptionHandler;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 public class EventDispatcherInitializer {
 
@@ -49,21 +54,34 @@ public class EventDispatcherInitializer {
 
     List<AccessibleObject> fieldsAndMethods = Stream.<AccessibleObject>concat(Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(eventHandlerBean.getClass())),
             Arrays.stream(eventHandlerBean.getClass().getDeclaredFields()))
-            .collect(Collectors.toList());
+            .collect(toList());
 
     List<AccessibleObject> annotatedCandidateEventHandlers = fieldsAndMethods.stream()
             .filter(fieldOrMethod -> AnnotationUtils.findAnnotation(fieldOrMethod, EventHandlerMethod.class) != null)
-            .collect(Collectors.toList());
+            .collect(toList());
 
     List<EventHandler> handlers = annotatedCandidateEventHandlers.stream()
             .map(fieldOrMethod -> Arrays.stream(processors).filter(processor -> processor.supports(fieldOrMethod)).findFirst().orElseThrow(() -> new RuntimeException("Don't know what to do with fieldOrMethod " + fieldOrMethod))
                     .process(eventHandlerBean, fieldOrMethod))
-            .collect(Collectors.toList());
+            .collect(toList());
 
     Map<String, Set<String>> aggregatesAndEvents = makeAggregatesAndEvents(handlers.stream()
-            .filter(handler -> !handler.getEventType().equals(EndOfCurrentEventsReachedEvent.class)).collect(Collectors.toList()));
+            .filter(handler -> !handler.getEventType().equals(EndOfCurrentEventsReachedEvent.class)).collect(toList()));
 
     Map<Class<?>, EventHandler> eventTypesAndHandlers = makeEventTypesAndHandlers(handlers);
+
+    List<EventDeliveryExceptionHandler> exceptionHandlers = Arrays.stream(eventHandlerBean.getClass()
+            .getDeclaredFields())
+            .filter(this::isExceptionHandlerField)
+            .map(f -> {
+              try {
+                f.setAccessible(true);
+                return (EventDeliveryExceptionHandler) f.get(eventHandlerBean);
+              } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+              }
+            })
+            .collect(toList());
 
     EventSubscriber a = AnnotationUtils.findAnnotation(eventHandlerBean.getClass(), EventSubscriber.class);
     if (a == null)
@@ -71,7 +89,7 @@ public class EventDispatcherInitializer {
 
     String subscriberId = StringUtils.isBlank(a.id()) ? beanName : a.id();
 
-    EventDispatcher eventDispatcher = new EventDispatcher(subscriberId, eventTypesAndHandlers);
+    EventDispatcher eventDispatcher = new EventDispatcher(subscriberId, eventTypesAndHandlers, new EventDeliveryExceptionHandlerManagerImpl(exceptionHandlers));
 
     SwimlaneBasedDispatcher swimlaneBasedDispatcher = new SwimlaneBasedDispatcher(subscriberId, executorService);
 
@@ -90,6 +108,10 @@ public class EventDispatcherInitializer {
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
       throw new EventuateSubscriptionFailedException(subscriberId, e);
     }
+  }
+
+  private boolean isExceptionHandlerField(Field f) {
+    return EventDeliveryExceptionHandler.class.isAssignableFrom(f.getType());
   }
 
   private Map<Class<?>, EventHandler> makeEventTypesAndHandlers(List<EventHandler> handlers) {

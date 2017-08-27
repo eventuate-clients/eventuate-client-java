@@ -5,6 +5,7 @@ import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.javaclient.commonimpl.adapters.AsyncToSyncAggregateCrudAdapter;
 import io.eventuate.javaclient.commonimpl.adapters.AsyncToSyncAggregateEventsAdapter;
 import io.eventuate.javaclient.commonimpl.adapters.AsyncToSyncTimeoutOptions;
+import io.eventuate.javaclient.eventhandling.exceptionhandling.EventuateClientScheduler;
 import io.eventuate.javaclient.restclient.EventuateRESTClient;
 import io.eventuate.javaclient.spring.common.EventuateCommonConfiguration;
 import io.eventuate.javaclient.spring.httpstomp.EventuateHttpStompClientConfigurationProperties;
@@ -54,6 +55,11 @@ public class EventuateDriverConfiguration {
     if (timeoutOptions != null)
       adapter.setTimeoutOptions(timeoutOptions);
     return adapter;
+  }
+
+  @Bean
+  public EventuateClientScheduler eventHandlerRecoveryScheduler(Vertx vertx) {
+    return new VertxEventuateClientScheduler(vertx);
   }
 
 }
