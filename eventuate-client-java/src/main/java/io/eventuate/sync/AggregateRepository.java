@@ -1,22 +1,7 @@
 package io.eventuate.sync;
 
 
-import io.eventuate.Aggregates;
-import io.eventuate.Command;
-import io.eventuate.CommandProcessingAggregate;
-import io.eventuate.DefaultMissingApplyEventMethodStrategy;
-import io.eventuate.DuplicateTriggeringEventException;
-import io.eventuate.EntityIdAndVersion;
-import io.eventuate.EntityWithIdAndVersion;
-import io.eventuate.EntityWithMetadata;
-import io.eventuate.Event;
-import io.eventuate.EventWithMetadata;
-import io.eventuate.FindOptions;
-import io.eventuate.Int128;
-import io.eventuate.MissingApplyEventMethodStrategy;
-import io.eventuate.OptimisticLockingException;
-import io.eventuate.SaveOptions;
-import io.eventuate.UpdateOptions;
+import io.eventuate.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,14 +32,11 @@ import java.util.function.Supplier;
  * @see Command
  */
 
-public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> {
+public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> extends CommonAggregateRepository<T, CT> {
 
   private static Logger logger = LoggerFactory.getLogger(AggregateRepository.class);
 
-  private Class<T> clasz;
   private EventuateAggregateStore aggregateStore;
-
-  private MissingApplyEventMethodStrategy missingApplyEventMethodStrategy = new DefaultMissingApplyEventMethodStrategy();
 
 
   /**
@@ -64,12 +46,8 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
    * @param aggregateStore the aggregate store
    */
   public AggregateRepository(Class<T> clasz, EventuateAggregateStore aggregateStore) {
-    this.clasz = clasz;
+    super(clasz);
     this.aggregateStore = aggregateStore;
-  }
-
-  public void setMissingApplyEventMethodStrategy(MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
-    this.missingApplyEventMethodStrategy = missingApplyEventMethodStrategy;
   }
 
   /**
@@ -171,14 +149,25 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
         return aggregateStore.find(clasz, entityId, Optional.empty()).toEntityWithIdAndVersion();
       }
       final T aggregate = entityWithMetadata.getEntity();
-      List<Event> events = commandProvider.apply(aggregate).map(aggregate::processCommand).orElse(Collections.emptyList());
-      if (events.isEmpty()) {
+
+      CommandOutcome commandResult;
+
+      try {
+        commandResult = new CommandOutcome(commandProvider.apply(aggregate).map(aggregate::processCommand).orElse(Collections.emptyList()));
+      } catch (Throwable e) {
+        commandResult = new CommandOutcome(e);
+      }
+
+      UpdateEventsAndOptions transformed = transformUpdateEventsAndOptions(updateOptions, aggregate, commandResult);
+      List<Event> transformedEvents = transformed.getEvents();
+      Optional<UpdateOptions> transformedOptions = transformed.getOptions();
+
+      if (transformedEvents.isEmpty()) {
         return entityWithMetadata.toEntityWithIdAndVersion();
       } else {
         try {
-          Aggregates.applyEventsToMutableAggregate(aggregate, events, missingApplyEventMethodStrategy);
-          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), events,
-                  withPossibleSnapshot(updateOptions, aggregate, entityWithMetadata.getSnapshotVersion(), entityWithMetadata.getEvents(), events));
+          EntityIdAndVersion entityIdAndVersion = aggregateStore.update(clasz, entityWithMetadata.getEntityIdAndVersion(), transformedEvents,
+                  withPossibleSnapshot(transformedOptions, aggregate, entityWithMetadata.getSnapshotVersion(), entityWithMetadata.getEvents(), transformedEvents));
           return new EntityWithIdAndVersion<>(entityIdAndVersion, aggregate);
         } catch (DuplicateTriggeringEventException e) {
           // TODO this should not happen

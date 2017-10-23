@@ -33,15 +33,11 @@ import java.util.function.Supplier;
  */
 
 
-public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> {
+public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT extends Command> extends CommonAggregateRepository<T, CT> {
 
   private static Logger logger = LoggerFactory.getLogger(AggregateRepository.class);
 
-  private Class<T> clasz;
   private EventuateAggregateStore aggregateStore;
-  private AggregateRepositoryInterceptor<T, CT > interceptor = new DefaultAggregateRepositoryInterceptor<>();
-
-  private MissingApplyEventMethodStrategy missingApplyEventMethodStrategy = new DefaultMissingApplyEventMethodStrategy();
 
   /**
    * Constructs a new AggregateRepository for the specified aggregate class and aggregate store
@@ -50,17 +46,10 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
    * @param aggregateStore the aggregate store
    */
   public AggregateRepository(Class<T> clasz, EventuateAggregateStore aggregateStore) {
-    this.clasz = clasz;
+    super(clasz);
     this.aggregateStore = aggregateStore;
   }
 
-  public void setMissingApplyEventMethodStrategy(MissingApplyEventMethodStrategy missingApplyEventMethodStrategy) {
-    this.missingApplyEventMethodStrategy = missingApplyEventMethodStrategy;
-  }
-
-  public void setInterceptor(AggregateRepositoryInterceptor<T, CT> interceptor) {
-    this.interceptor = interceptor;
-  }
 
   /**
    * Create a new Aggregate by processing a command and persisting the events
@@ -149,26 +138,7 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
   public CompletableFuture<EntityWithIdAndVersion<T>> update(final String entityId, final CT cmd, Optional<UpdateOptions> updateOptions) {
     return updateWithProvidedCommand(entityId, (a) -> Optional.of(cmd), updateOptions);
   }
-
-  class Outcome<T> {
-    public final T result;
-    public final Throwable throwable;
-
-    public Outcome(T result) {
-      this.result = result;
-      this.throwable = null;
-    }
-
-    public Outcome(Throwable throwable) {
-      this.result = null;
-      this.throwable = throwable;
-    }
-
-    public boolean isFailure() {
-      return throwable != null;
-    }
-  }
-
+  
   /**
    * Update the specified aggregate by processing a command and saving events
    *
@@ -203,30 +173,15 @@ public class AggregateRepository<T extends CommandProcessingAggregate<T, CT>, CT
         if (loadedEntityWithMetadata.success) {
           EntityWithMetadata<T> entityWithMetaData = loadedEntityWithMetadata.ewmd;
           final T aggregate = entityWithMetaData.getEntity();
-          Outcome<List<Event>> commandResult = commandProvider.apply(aggregate).map(command -> {
+          CommandOutcome commandResult = commandProvider.apply(aggregate).map(command -> {
             try {
-              return new Outcome<>(aggregate.processCommand(command));
+              return new CommandOutcome(aggregate.processCommand(command));
             } catch (EventuateCommandProcessingFailedException e) {
-              return new Outcome<List<Event>>(e.getCause());
+              return new CommandOutcome(e.getCause());
             }
-          }).orElse(new Outcome<List<Event>>(Collections.emptyList()));
+          }).orElse(new CommandOutcome(Collections.emptyList()));
 
-          UpdateEventsAndOptions transformed;
-
-          if (commandResult.isFailure()) {
-            Optional<UpdateEventsAndOptions> handled = interceptor.handleException(aggregate, commandResult.throwable, updateOptions);
-            if (handled.isPresent())
-              transformed = handled.get();
-            else {
-              throw new EventuateCommandProcessingFailedException(commandResult.throwable);
-            }
-          } else {
-            List<Event> events = commandResult.result;
-
-            Aggregates.applyEventsToMutableAggregate(aggregate, events, missingApplyEventMethodStrategy);
-            UpdateEventsAndOptions original = new UpdateEventsAndOptions(events, updateOptions);
-            transformed = updateOptions.flatMap(uo -> uo.getInterceptor()).orElse(interceptor).transformUpdate(aggregate, original);
-          }
+          UpdateEventsAndOptions transformed = transformUpdateEventsAndOptions(updateOptions, aggregate, commandResult);
 
           List<Event> transformedEvents = transformed.getEvents();
           Optional<UpdateOptions> transformedOptions = transformed.getOptions();
