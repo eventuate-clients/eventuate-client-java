@@ -41,21 +41,15 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
 
   public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate) {
-    this(jdbcTemplate, Optional.empty());
+    this(jdbcTemplate, "eventuate");
   }
 
-  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, Optional<String> database) {
+  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, String database) {
     this.jdbcTemplate = jdbcTemplate;
 
-    if (database.isPresent()) {
-      entityTable = database.get() + ".entities";
-      eventTable = database.get() + ".events";
-      snapshotTable = database.get() + ".snapshots";
-    } else {
-      entityTable = "entities";
-      eventTable = "events";
-      snapshotTable = "snapshots";
-    }
+    entityTable = database + ".entities";
+    eventTable = database + ".events";
+    snapshotTable = database + ".snapshots";
   }
 
   private IdGenerator idGenerator = new IdGeneratorImpl();
