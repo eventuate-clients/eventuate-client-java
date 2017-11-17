@@ -1,3 +1,6 @@
+CREATE SCHEMA eventuate AUTHORIZATION SA;
+SET SCHEMA eventuate;
+
 DROP table IF EXISTS events;
 DROP table IF EXISTS  entities;
 DROP table IF EXISTS  snapshots;
