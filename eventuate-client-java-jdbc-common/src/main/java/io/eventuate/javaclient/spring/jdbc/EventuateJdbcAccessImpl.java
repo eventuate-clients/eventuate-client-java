@@ -39,13 +39,10 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   private String eventTable;
   private String snapshotTable;
 
-
   public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate) {
-    this(jdbcTemplate, "eventuate");
-  }
-
-  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, String database) {
     this.jdbcTemplate = jdbcTemplate;
+
+    final String database = "eventuate";
 
     entityTable = database + ".entities";
     eventTable = database + ".events";
