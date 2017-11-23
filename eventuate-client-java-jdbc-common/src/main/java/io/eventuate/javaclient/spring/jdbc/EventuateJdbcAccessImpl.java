@@ -17,7 +17,6 @@ import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
 import io.eventuate.javaclient.commonimpl.SerializedSnapshot;
 import io.eventuate.javaclient.commonimpl.SerializedSnapshotWithVersion;
-import io.eventuate.javaclient.commonimpl.sync.AggregateCrud;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -32,6 +31,9 @@ import java.util.stream.Collectors;
 
 public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
+  public static final String DEFAULT_DATABASE_SCHEME = "eventute";
+  public static final String EMPTY_DATABASE_SCHEME = "none";
+
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
   private JdbcTemplate jdbcTemplate;
@@ -40,15 +42,21 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   private String snapshotTable;
 
   public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate) {
-    this(jdbcTemplate, "eventuate");
+    this(jdbcTemplate, DEFAULT_DATABASE_SCHEME);
   }
 
   public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, String database) {
     this.jdbcTemplate = jdbcTemplate;
 
-    entityTable = database + ".entities";
-    eventTable = database + ".events";
-    snapshotTable = database + ".snapshots";
+    if (EMPTY_DATABASE_SCHEME.equals(database)) {
+      entityTable = "entities";
+      eventTable = "events";
+      snapshotTable = "snapshots";
+    } else {
+      entityTable = database + ".entities";
+      eventTable = database + ".events";
+      snapshotTable = database + ".snapshots";
+    }
   }
 
   private IdGenerator idGenerator = new IdGeneratorImpl();
