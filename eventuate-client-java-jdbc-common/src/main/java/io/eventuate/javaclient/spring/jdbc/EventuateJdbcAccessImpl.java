@@ -31,8 +31,7 @@ import java.util.stream.Collectors;
 
 public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
-  public static final String DEFAULT_DATABASE_SCHEME = "eventute";
-  public static final String EMPTY_DATABASE_SCHEME = "none";
+  public static final String DEFAULT_DATABASE_SCHEMA = "eventuate";
 
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -42,21 +41,15 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   private String snapshotTable;
 
   public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate) {
-    this(jdbcTemplate, DEFAULT_DATABASE_SCHEME);
+    this(jdbcTemplate, new EventuateSchema());
   }
 
-  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, String database) {
+  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, EventuateSchema eventuateSchema) {
     this.jdbcTemplate = jdbcTemplate;
 
-    if (EMPTY_DATABASE_SCHEME.equals(database)) {
-      entityTable = "entities";
-      eventTable = "events";
-      snapshotTable = "snapshots";
-    } else {
-      entityTable = database + ".entities";
-      eventTable = database + ".events";
-      snapshotTable = database + ".snapshots";
-    }
+    entityTable = eventuateSchema.qualifyTable("entities");
+    eventTable = eventuateSchema.qualifyTable("events");
+    snapshotTable = eventuateSchema.qualifyTable("snapshots");
   }
 
   private IdGenerator idGenerator = new IdGeneratorImpl();
