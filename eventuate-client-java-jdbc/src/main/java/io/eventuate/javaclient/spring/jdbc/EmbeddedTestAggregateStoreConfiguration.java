@@ -35,7 +35,7 @@ public class EmbeddedTestAggregateStoreConfiguration {
   @Bean
   public DataSource dataSource() {
     EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
-    return builder.setType(EmbeddedDatabaseType.H2).addScript("embedded-event-store-schema.sql").build();
+    return builder.setType(EmbeddedDatabaseType.H2).addScript("eventuate-embedded-schema.sql").build();
   }
 
   @Bean

@@ -37,19 +37,4 @@ public class EventuateSchema {
 
     return String.format("%s.%s", schema, table);
   }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    EventuateSchema that = (EventuateSchema) o;
-
-    return Objects.equals(that.eventuateDatabaseSchema, eventuateDatabaseSchema);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(eventuateDatabaseSchema);
-  }
 }

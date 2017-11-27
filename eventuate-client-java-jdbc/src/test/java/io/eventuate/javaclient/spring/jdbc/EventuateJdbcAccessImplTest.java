@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
 
 public abstract class EventuateJdbcAccessImplTest {
 
@@ -100,5 +100,27 @@ public abstract class EventuateJdbcAccessImplTest {
 
     LoadedEvents loadedEvents = eventuateJdbcAccess.find(testAggregate, saveUpdateResult.getEntityIdVersionAndEventIds().getEntityId(), Optional.empty());
     Assert.assertTrue(loadedEvents.getSnapshot().isPresent());
+  }
+
+  protected List<String> loadSqlScriptAsListOfLines(String script) throws IOException {
+    List<String> lines = new ArrayList<>();
+
+    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/eventuate-embedded-schema.sql")));
+    bufferedReader.lines().forEach(lines::add);
+    bufferedReader.close();
+
+    return lines;
+  }
+
+  protected void executeSql(List<String> sqlList) {
+    StringBuilder sql = new StringBuilder();
+
+    sqlList.forEach(s ->
+    {
+      sql.append(s);
+      sql.append("\n");
+    });
+
+    jdbcTemplate.execute(sql.toString());
   }
 }
