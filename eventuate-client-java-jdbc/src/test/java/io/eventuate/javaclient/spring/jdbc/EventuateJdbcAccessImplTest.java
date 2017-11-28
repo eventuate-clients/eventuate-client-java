@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class EventuateJdbcAccessImplTest {
 
@@ -103,24 +104,12 @@ public abstract class EventuateJdbcAccessImplTest {
   }
 
   protected List<String> loadSqlScriptAsListOfLines(String script) throws IOException {
-    List<String> lines = new ArrayList<>();
-
-    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/eventuate-embedded-schema.sql")));
-    bufferedReader.lines().forEach(lines::add);
-    bufferedReader.close();
-
-    return lines;
+    try(BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/eventuate-embedded-schema.sql")))) {
+      return bufferedReader.lines().collect(Collectors.toList());
+    }
   }
 
   protected void executeSql(List<String> sqlList) {
-    StringBuilder sql = new StringBuilder();
-
-    sqlList.forEach(s ->
-    {
-      sql.append(s);
-      sql.append("\n");
-    });
-
-    jdbcTemplate.execute(sql.toString());
+    jdbcTemplate.execute(sqlList.stream().collect(Collectors.joining("\n")));
   }
 }
