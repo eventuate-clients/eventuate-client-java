@@ -3,5 +3,6 @@ apply plugin: PrivateModulePlugin
 dependencies {
     compile project(":eventuate-client-java-tests-example-domain")
     compile project(":eventuate-client-java-spring")
+    compile project(":eventuate-client-java-test-util")
     compile "io.reactivex:rxjava:$rxJavaVersion"
 }

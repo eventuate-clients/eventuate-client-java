@@ -48,9 +48,9 @@ public abstract class AbstractAccountIntegrationTest {
 
     logger.debug("Looking for event: " + accountEntity.getEntityVersion().asString());
 
-    accountCommandSideEventHandler.getEvents().eventuallyContains(ctx -> ctx.getEventId().equals(accountEntity.getEntityVersion()));
+    accountCommandSideEventHandler.eventuallyContains("accountQuerySideEventHandler CreateEvent", accountEntity.getEntityVersion());
 
-    accountQuerySideEventHandler.getEvents().eventuallyContains(ctx -> ctx.getEventId().equals(accountEntity.getEntityVersion()));
+    accountQuerySideEventHandler.eventuallyContains("accountQuerySideEventHandler CreateEvent", accountEntity.getEntityVersion());
 
 
     MoneyTransfer moneyTransfer = new MoneyTransfer();
@@ -60,12 +60,12 @@ public abstract class AbstractAccountIntegrationTest {
 
     logger.debug("Looking for MoneyTransferCreatedEvent: " + moneyTransferEntity.getEntityVersion());
 
-    moneyTransferCommandSideEventHandler.getEvents().eventuallyContains(
+    moneyTransferCommandSideEventHandler.eventuallyContains( "moneyTransferCommandSideEventHandler create",
             ctx -> ctx.getEventId().equals(moneyTransferEntity.getEntityVersion()));
 
     logger.debug("Looking for AccountDebitedEvent with this transaction id: " + moneyTransferEntity.getEntityId());
 
-    moneyTransferCommandSideEventHandler.getEvents().eventuallyContains(
+    moneyTransferCommandSideEventHandler.eventuallyContains("moneyTransferCommandSideEventHandler",
             ctx -> AccountDebitedEvent.class.isInstance(ctx.getEvent()) && moneyTransferEntity.getEntityId().equals(((AccountDebitedEvent) ctx.getEvent()).getTransactionId()));
 
   }

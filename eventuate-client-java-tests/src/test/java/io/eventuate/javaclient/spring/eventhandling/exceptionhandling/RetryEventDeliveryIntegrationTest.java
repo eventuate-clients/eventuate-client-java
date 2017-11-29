@@ -29,7 +29,7 @@ public class RetryEventDeliveryIntegrationTest {
   @Test
   public void shouldCreateAccount() {
     EntityWithIdAndVersion<Account> saveResult = accountRepository.save(new CreateAccountCommand(new BigDecimal("10.23")));
-    retryEventDeliveryIntegrationTestEventHandler.getEvents().eventuallyContains(ctx -> ctx.getEventId().equals(saveResult.getEntityVersion()));
+    retryEventDeliveryIntegrationTestEventHandler.eventuallyContains("retryEventDeliveryIntegrationTestEventHandler", saveResult.getEntityVersion());
   }
 }
 

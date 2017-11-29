@@ -29,7 +29,7 @@ public class JdbcRetryEventDeliveryIntegrationTest {
   @Test
   public void shouldCreateAccount() {
     EntityWithIdAndVersion<Account> saveResult = accountRepository.save(new CreateAccountCommand(new BigDecimal("10.23")));
-    eventHandler.getEvents().eventuallyContains(ctx -> ctx.getEventId().equals(saveResult.getEntityVersion()));
+    eventHandler.eventuallyContains("JdbcRetryEventDeliveryIntegrationTestEventHandler", ctx -> ctx.getEventId().equals(saveResult.getEntityVersion()));
   }
 }
 

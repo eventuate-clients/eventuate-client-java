@@ -17,7 +17,6 @@ public class Eventually {
     Throwable t = null;
     for (int i = 0; i < iterations; i++) {
       try {
-        System.out.println("trying");
         return body.get();
       } catch (Throwable t1) {
         t = t1;
@@ -28,6 +27,6 @@ public class Eventually {
         }
       }
     }
-    throw new EventuallyException(String.format("Failed after %s iterations every %s milliseconds", iterations, 250), t);
+    throw new EventuallyException(String.format("Failed after %s iterations every %s %s", iterations, timeout, timeUnit), t);
   }
 }

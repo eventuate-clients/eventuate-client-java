@@ -4,18 +4,13 @@ import io.eventuate.DispatchedEvent;
 import io.eventuate.EventHandlerMethod;
 import io.eventuate.EventSubscriber;
 import io.eventuate.example.banking.domain.AccountCreatedEvent;
+import io.eventuate.testutil.AbstractTestEventHandler;
 
 @EventSubscriber(id="javaIntegrationTestQuerySideAccountEventHandlers")
-public class AccountQuerySideEventHandler {
-
-  private EventTracker<DispatchedEvent<AccountCreatedEvent>> events = EventTracker.create();
-
-  public EventTracker<DispatchedEvent<AccountCreatedEvent>> getEvents() {
-    return events;
-  }
+public class AccountQuerySideEventHandler extends AbstractTestEventHandler {
 
   @EventHandlerMethod
   public void create(DispatchedEvent<AccountCreatedEvent> de) {
-    events.onNext(de);
+    add(de);
   }
 }

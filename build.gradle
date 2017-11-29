@@ -22,10 +22,14 @@ projects {
     }
 }
 
+
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'com.jfrog.bintray'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
     bintray {
         user = System.getenv('BINTRAY_USER')
