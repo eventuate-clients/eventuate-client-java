@@ -5,7 +5,7 @@ import io.eventuate.EventHandlerContext;
 import io.eventuate.EventHandlerMethod;
 import io.eventuate.EventSubscriber;
 import io.eventuate.SubscriberInitialPosition;
-import io.eventuate.example.banking.domain.AccountCreatedEvent;
+import io.eventuate.example.banking.domain.AccountDebitedEvent;
 import io.eventuate.javaclient.eventhandling.exceptionhandling.EventDeliveryExceptionHandler;
 import io.eventuate.testutil.AbstractTestEventHandler;
 import org.slf4j.Logger;
@@ -25,10 +25,13 @@ public class RetryEventDeliveryIntegrationTestEventHandler extends AbstractTestE
 
   @Autowired
   private EventDeliveryExceptionHandler eventDeliveryExceptionHandler;
+  private String accountId;
 
   @EventHandlerMethod
   @Qualifier("forEventHandlerRetryEventHandler")
-  public void accountCreated(EventHandlerContext<AccountCreatedEvent> ctx) {
+  public void accountCreated(EventHandlerContext<AccountDebitedEvent> ctx) {
+    if (!ctx.getEntityId().equals(accountId))
+      return;
     if (tracking.compute(ctx.getSwimlane(), (Integer k, Boolean value) -> value == null || !value)) {
       // was false
       logger.info("throwing RetryEventHandlerException {}", ctx.getSwimlane());
@@ -39,5 +42,12 @@ public class RetryEventDeliveryIntegrationTestEventHandler extends AbstractTestE
     }
   }
 
+  public void setAccountId(String accountId) {
+    this.accountId = accountId;
+  }
+
+  public String getAccountId() {
+    return accountId;
+  }
 }
 

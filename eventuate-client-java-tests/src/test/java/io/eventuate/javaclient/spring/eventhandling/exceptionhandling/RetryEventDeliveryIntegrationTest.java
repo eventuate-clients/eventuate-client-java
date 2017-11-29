@@ -4,6 +4,7 @@ import io.eventuate.EntityWithIdAndVersion;
 import io.eventuate.example.banking.domain.Account;
 import io.eventuate.example.banking.domain.AccountCommand;
 import io.eventuate.example.banking.domain.CreateAccountCommand;
+import io.eventuate.example.banking.domain.DebitAccountCommand;
 import io.eventuate.sync.AggregateRepository;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +30,11 @@ public class RetryEventDeliveryIntegrationTest {
   @Test
   public void shouldCreateAccount() {
     EntityWithIdAndVersion<Account> saveResult = accountRepository.save(new CreateAccountCommand(new BigDecimal("10.23")));
-    retryEventDeliveryIntegrationTestEventHandler.eventuallyContains("retryEventDeliveryIntegrationTestEventHandler", saveResult.getEntityVersion());
+    retryEventDeliveryIntegrationTestEventHandler.setAccountId(saveResult.getEntityId());
+
+    EntityWithIdAndVersion<Account> updateResult = accountRepository.update(saveResult.getEntityId(), new DebitAccountCommand(new BigDecimal("1.23"), null));
+
+    retryEventDeliveryIntegrationTestEventHandler.eventuallyContains("retryEventDeliveryIntegrationTestEventHandler", updateResult.getEntityVersion());
   }
 }
 
