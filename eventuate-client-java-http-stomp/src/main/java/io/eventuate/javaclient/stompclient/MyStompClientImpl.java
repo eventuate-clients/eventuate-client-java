@@ -48,17 +48,17 @@ public class MyStompClientImpl implements StompClient {
   private final StompClientOptions options;
   private NetClient client;
   private Handler<Void> closeHandler;
-  private Map<String, String> customHeaders;
+  private Map<String, String> customConnectHeaders;
 
 
   public MyStompClientImpl(Vertx vertx, StompClientOptions options) {
     this(vertx, options, Collections.emptyMap());
   }
 
-  public MyStompClientImpl(Vertx vertx, StompClientOptions options, Map<String, String> customHeaders) {
+  public MyStompClientImpl(Vertx vertx, StompClientOptions options, Map<String, String> customConnectHeaders) {
     this.vertx = vertx;
     this.options = options;
-    this.customHeaders = customHeaders;
+    this.customConnectHeaders = customConnectHeaders;
   }
 
   @Override
@@ -152,7 +152,7 @@ public class MyStompClientImpl implements StompClient {
     }
     headers.put(Frame.HEARTBEAT, Frame.Heartbeat.create(options.getHeartbeat()).toString());
 
-    headers.addAll(customHeaders);
+    headers.addAll(customConnectHeaders);
 
     Frame.Command cmd = options.isUseStompFrame() ? Frame.Command.STOMP : Frame.Command.CONNECT;
     final Frame frame = new Frame(cmd, headers, null);
