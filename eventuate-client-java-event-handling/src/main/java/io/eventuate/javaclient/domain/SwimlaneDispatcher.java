@@ -28,6 +28,10 @@ public class SwimlaneDispatcher {
     this.executor = executor;
   }
 
+  public boolean getRunning() {
+    return running.get();
+  }
+
   public CompletableFuture<?> dispatch(DispatchedEvent<Event> de, Function<DispatchedEvent<Event>, CompletableFuture<?>> target) {
     synchronized (queue) {
       QueuedEvent qe = new QueuedEvent(de, target);
