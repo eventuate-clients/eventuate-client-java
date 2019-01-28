@@ -5,4 +5,7 @@ dependencies {
     compile project(":eventuate-client-java-spring")
     compile project(":eventuate-client-java-test-util")
     compile "io.reactivex:rxjava:$rxJavaVersion"
+    compile 'org.aspectj:aspectjrt:1.8.9'
+    compile 'org.aspectj:aspectjweaver:1.8.9'
+
 }

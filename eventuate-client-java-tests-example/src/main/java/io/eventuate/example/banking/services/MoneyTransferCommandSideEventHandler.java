@@ -7,11 +7,13 @@ import io.eventuate.EventHandlerMethod;
 import io.eventuate.EventSubscriber;
 import io.eventuate.example.banking.domain.AccountDebitedEvent;
 import io.eventuate.example.banking.domain.MoneyTransferCreatedEvent;
+import io.eventuate.example.banking.services.counting.Countable;
 import io.eventuate.testutil.AbstractTestEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @EventSubscriber(id="javaIntegrationTestCommandSideMoneyTransferEventHandlers",progressNotifications = true)
+@Countable
 public class MoneyTransferCommandSideEventHandler extends AbstractTestEventHandler {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

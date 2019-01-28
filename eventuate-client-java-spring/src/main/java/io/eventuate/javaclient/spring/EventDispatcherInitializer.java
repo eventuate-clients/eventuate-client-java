@@ -50,10 +50,10 @@ public class EventDispatcherInitializer {
   }
 
 
-  public void registerEventHandler(Object eventHandlerBean, String beanName) {
+  public void registerEventHandler(Object eventHandlerBean, String beanName, Class<?> beanClass) {
 
-    List<AccessibleObject> fieldsAndMethods = Stream.<AccessibleObject>concat(Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(eventHandlerBean.getClass())),
-            Arrays.stream(eventHandlerBean.getClass().getDeclaredFields()))
+    List<AccessibleObject> fieldsAndMethods = Stream.<AccessibleObject>concat(Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(beanClass)),
+            Arrays.stream(beanClass.getDeclaredFields()))
             .collect(toList());
 
     List<AccessibleObject> annotatedCandidateEventHandlers = fieldsAndMethods.stream()
@@ -65,12 +65,15 @@ public class EventDispatcherInitializer {
                     .process(eventHandlerBean, fieldOrMethod))
             .collect(toList());
 
+    if (handlers.isEmpty())
+      throw new RuntimeException("No handlers defined for this class" + beanClass);
+
     Map<String, Set<String>> aggregatesAndEvents = makeAggregatesAndEvents(handlers.stream()
             .filter(handler -> !handler.getEventType().equals(EndOfCurrentEventsReachedEvent.class)).collect(toList()));
 
     Map<Class<?>, EventHandler> eventTypesAndHandlers = makeEventTypesAndHandlers(handlers);
 
-    List<EventDeliveryExceptionHandler> exceptionHandlers = Arrays.stream(eventHandlerBean.getClass()
+    List<EventDeliveryExceptionHandler> exceptionHandlers = Arrays.stream(beanClass
             .getDeclaredFields())
             .filter(this::isExceptionHandlerField)
             .map(f -> {
@@ -83,7 +86,7 @@ public class EventDispatcherInitializer {
             })
             .collect(toList());
 
-    EventSubscriber a = AnnotationUtils.findAnnotation(eventHandlerBean.getClass(), EventSubscriber.class);
+    EventSubscriber a = AnnotationUtils.findAnnotation(beanClass, EventSubscriber.class);
     if (a == null)
       throw new RuntimeException("Needs @EventSubscriber annotation: " + eventHandlerBean);
 
@@ -104,7 +107,7 @@ public class EventDispatcherInitializer {
     try {
       aggregateStore.subscribe(subscriberId, aggregatesAndEvents,
               subscriberOptions, de -> swimlaneBasedDispatcher.dispatch(de, eventDispatcher::dispatch)).get(20, TimeUnit.SECONDS);
-      subscriptionsRegistry.add(new RegisteredSubscription(subscriberId, aggregatesAndEvents, eventHandlerBean.getClass()));
+      subscriptionsRegistry.add(new RegisteredSubscription(subscriberId, aggregatesAndEvents, beanClass));
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
       throw new EventuateSubscriptionFailedException(subscriberId, e);
     }
