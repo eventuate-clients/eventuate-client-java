@@ -1,8 +1,10 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventSubscriber;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
 
 /**
@@ -20,16 +22,15 @@ public class EventHandlerBeanPostProcessor implements BeanPostProcessor {
 
   @Override
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-    EventSubscriber a = AnnotationUtils.findAnnotation(bean.getClass(), EventSubscriber.class);
-    if (a != null)
-      eventDispatcherInitializer.registerEventHandler(bean, beanName);
     return bean;
   }
 
-
-
   @Override
   public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+    Class<?> actualClass = AopUtils.getTargetClass(bean);
+    EventSubscriber a = AnnotationUtils.findAnnotation(actualClass, EventSubscriber.class);
+    if (a != null)
+      eventDispatcherInitializer.registerEventHandler(bean, beanName, actualClass);
     return bean;
   }
 }

@@ -18,7 +18,10 @@ include 'eventuate-client-java-embedded-test-aggregate-store-autoconfigure'
 include 'eventuate-client-java-tests-example-domain'
 include 'eventuate-client-java-tests-example'
 include 'eventuate-client-java-tests-common'
-include 'eventuate-client-java-tests'
+
+// Temporarily disable
+// include 'eventuate-client-java-tests'
+
 include 'eventuate-client-java-tests-jdbc'
 
 include 'eventuate-client-java-test-util'

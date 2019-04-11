@@ -52,7 +52,6 @@ public class EventDispatcher {
     CompletableFuture<?> r1 = eventHandler.dispatch(de);
 
     if (activityLogger.isDebugEnabled()) {
-      activityLogger.debug("Invoking event handler {} {} {}", subscriberId, de, eventHandler);
       CompletableFutureUtil.tap(r1, (o, throwable) -> {
         if (throwable == null)
           activityLogger.debug("Invoked event handler {} {} {}", subscriberId, de, eventHandler);

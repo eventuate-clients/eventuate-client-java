@@ -4,10 +4,13 @@ import io.eventuate.AggregateRepository;
 import io.eventuate.EventuateAggregateStore;
 import io.eventuate.example.banking.domain.Account;
 import io.eventuate.example.banking.domain.AccountCommand;
+import io.eventuate.example.banking.services.counting.InvocationCountingAspect;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @Configuration
+@EnableAspectJAutoProxy
 public class JavaIntegrationTestDomainConfiguration {
 
   @Bean
@@ -33,7 +36,12 @@ public class JavaIntegrationTestDomainConfiguration {
 
   @Bean
   public AggregateRepository<Account, AccountCommand> accountRepository(EventuateAggregateStore aggregateStore) {
-    return new AggregateRepository<Account, AccountCommand>(Account.class, aggregateStore);
+    return new AggregateRepository<>(Account.class, aggregateStore);
+  }
+
+  @Bean
+  public InvocationCountingAspect loggingAspect() {
+    return new InvocationCountingAspect();
   }
 
 }
