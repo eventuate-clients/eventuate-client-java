@@ -36,16 +36,18 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
   private JdbcTemplate jdbcTemplate;
+  private EventuateSqlDialect sqlDialect;
   private String entityTable;
   private String eventTable;
   private String snapshotTable;
 
-  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate) {
-    this(jdbcTemplate, new EventuateSchema());
+  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, EventuateSqlDialect sqlDialect) {
+    this(jdbcTemplate, new EventuateSchema(), sqlDialect);
   }
 
-  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, EventuateSchema eventuateSchema) {
+  public EventuateJdbcAccessImpl(JdbcTemplate jdbcTemplate, EventuateSchema eventuateSchema, EventuateSqlDialect sqlDialect) {
     this.jdbcTemplate = jdbcTemplate;
+    this.sqlDialect = sqlDialect;
 
     entityTable = eventuateSchema.qualifyTable("entities");
     eventTable = eventuateSchema.qualifyTable("events");
@@ -105,7 +107,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   public <T extends Aggregate<T>> LoadedEvents find(String aggregateType, String entityId, Optional<AggregateCrudFindOptions> findOptions) {
     Optional<LoadedSnapshot> snapshot = Optional.ofNullable(DataAccessUtils.singleResult(
             jdbcTemplate.query(
-                    String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
+                    sqlDialect.addLimitToSql(String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc", snapshotTable), "1"),
                     (rs, rownum) -> {
                       return new LoadedSnapshot(
                               new SerializedSnapshotWithVersion(
@@ -157,7 +159,10 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
   @Override
   @Transactional
-  public SaveUpdateResult update(EntityIdAndType entityIdAndType, Int128 entityVersion, List<EventTypeAndData> events, Optional<AggregateCrudUpdateOptions> updateOptions) {
+  public SaveUpdateResult update(EntityIdAndType entityIdAndType,
+                                 Int128 entityVersion,
+                                 List<EventTypeAndData> events,
+                                 Optional<AggregateCrudUpdateOptions> updateOptions) {
 
     // TODO - triggering event check
 
@@ -186,7 +191,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
       Optional<LoadedSnapshot> previousSnapshot = Optional.ofNullable(DataAccessUtils.singleResult(
               jdbcTemplate.query(
-                      String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
+                      sqlDialect.addLimitToSql(String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc", snapshotTable), "1"),
                       (rs, rownum) -> {
                         return new LoadedSnapshot(
                                 new SerializedSnapshotWithVersion(

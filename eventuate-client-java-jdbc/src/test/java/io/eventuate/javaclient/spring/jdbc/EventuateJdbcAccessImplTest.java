@@ -33,7 +33,7 @@ public abstract class EventuateJdbcAccessImplTest {
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate, EventuateSchema eventuateSchema) {
-      return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateSchema);
+      return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateSchema, new DefaultEventuateSqlDialect());
     }
   }
 

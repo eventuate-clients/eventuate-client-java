@@ -24,7 +24,7 @@ public class EmbeddedTestAggregateStoreConfiguration {
   @Bean
   public EventuateJdbcAccess eventuateJdbcAccess() {
     JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource());
-    return new EventuateJdbcAccessImpl(jdbcTemplate);
+    return new EventuateJdbcAccessImpl(jdbcTemplate, new DefaultEventuateSqlDialect());
   }
 
   @Bean
