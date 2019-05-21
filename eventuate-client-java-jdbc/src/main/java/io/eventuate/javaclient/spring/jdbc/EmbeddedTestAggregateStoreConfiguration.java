@@ -1,5 +1,6 @@
 package io.eventuate.javaclient.spring.jdbc;
 
+import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.javaclient.commonimpl.adapters.SyncToAsyncAggregateCrudAdapter;
@@ -22,9 +23,18 @@ import javax.sql.DataSource;
 public class EmbeddedTestAggregateStoreConfiguration {
 
   @Bean
-  public EventuateJdbcAccess eventuateJdbcAccess() {
-    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource());
-    return new EventuateJdbcAccessImpl(jdbcTemplate);
+  public JdbcTemplate jdbcTemplate() {
+    return new JdbcTemplate(dataSource());
+  }
+
+  @Bean
+  public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(JdbcTemplate jdbcTemplate) {
+    return new EventuateCommonJdbcOperations(jdbcTemplate);
+  }
+
+  @Bean
+  public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
+    return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateCommonJdbcOperations);
   }
 
   @Bean

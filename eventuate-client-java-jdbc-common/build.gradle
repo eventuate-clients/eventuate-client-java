@@ -4,7 +4,7 @@ dependencies {
     compile project(":eventuate-client-java-common-impl")
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-
+    compile "io.eventuate.common:eventuate-common-jdbc:$eventuateCommonVersion"
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 
 }
