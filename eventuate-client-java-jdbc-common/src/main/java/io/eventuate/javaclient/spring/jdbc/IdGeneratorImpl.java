@@ -20,20 +20,27 @@ public class IdGeneratorImpl implements IdGenerator {
 
   public IdGeneratorImpl() {
     try {
-      Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
-      while (ifaces.hasMoreElements()) {
-        NetworkInterface iface = ifaces.nextElement();
-        if (iface.getHardwareAddress() != null) {
-          macAddress = toLong(iface.getHardwareAddress());
-          logger.debug("Mac address {}", macAddress);
-          break;
-        }
-      }
+      macAddress = getMacAddress();
+      logger.debug("Mac address {}", macAddress);
       if (macAddress == null)
         throw new RuntimeException("Cannot find mac address");
     } catch (SocketException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private Long getMacAddress() throws SocketException {
+    String ma = System.getenv("EVENTUATE_MAC_ADDRESS");
+    if (ma != null)
+      return Long.parseLong(ma);
+    Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+    while (ifaces.hasMoreElements()) {
+      NetworkInterface iface = ifaces.nextElement();
+      if (iface.getHardwareAddress() != null) {
+        return toLong(iface.getHardwareAddress());
+      }
+    }
+    return null;
   }
 
   private Long toLong(byte[] bytes) {
