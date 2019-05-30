@@ -10,7 +10,7 @@ import io.eventuate.EntityAlreadyExistsException;
 import io.eventuate.EntityIdAndType;
 import io.eventuate.EntityNotFoundException;
 import io.eventuate.EventuateServerException;
-import io.eventuate.Int128;
+import io.eventuate.common.id.generator.Int128;
 import io.eventuate.OptimisticLockingException;
 import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
 import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;

@@ -1,6 +1,7 @@
 package io.eventuate.javaclient.commonimpl;
 
 import io.eventuate.*;
+import io.eventuate.common.id.generator.Int128;
 
 import java.util.List;
 import java.util.Optional;

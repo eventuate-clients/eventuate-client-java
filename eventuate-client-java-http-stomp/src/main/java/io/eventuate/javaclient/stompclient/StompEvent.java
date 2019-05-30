@@ -1,6 +1,6 @@
 package io.eventuate.javaclient.stompclient;
 
-import io.eventuate.Int128;
+import io.eventuate.common.id.generator.Int128;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class StompEvent {

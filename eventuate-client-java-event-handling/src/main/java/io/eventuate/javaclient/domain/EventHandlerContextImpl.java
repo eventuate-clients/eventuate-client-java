@@ -1,6 +1,7 @@
 package io.eventuate.javaclient.domain;
 
 import io.eventuate.*;
+import io.eventuate.common.id.generator.Int128;
 
 import java.util.Map;
 import java.util.Optional;

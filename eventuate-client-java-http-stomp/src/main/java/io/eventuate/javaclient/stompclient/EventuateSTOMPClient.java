@@ -2,7 +2,7 @@ package io.eventuate.javaclient.stompclient;
 
 import io.eventuate.SubscriberOptions;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
-import io.eventuate.javaclient.commonimpl.JSonMapper;
+import io.eventuate.common.json.mapper.JSonMapper;
 import io.eventuate.javaclient.commonimpl.SerializedEvent;
 import io.eventuate.EventContext;
 import io.eventuate.javaclient.restclient.VertxUtil;

@@ -2,6 +2,7 @@ package io.eventuate.sync;
 
 
 import io.eventuate.*;
+import io.eventuate.common.id.generator.Int128;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

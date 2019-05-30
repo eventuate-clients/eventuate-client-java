@@ -1,7 +1,7 @@
 package io.eventuate.javaclient.stompclient;
 
 
-import io.eventuate.Int128;
+import io.eventuate.common.id.generator.Int128;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;

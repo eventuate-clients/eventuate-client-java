@@ -1,6 +1,6 @@
 package io.eventuate.example.banking.domain;
 
-import io.eventuate.javaclient.commonimpl.JSonMapper;
+import io.eventuate.common.json.mapper.JSonMapper;
 import org.junit.Test;
 
 import java.math.BigDecimal;

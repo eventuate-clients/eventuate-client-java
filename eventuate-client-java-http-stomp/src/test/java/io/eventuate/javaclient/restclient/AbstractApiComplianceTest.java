@@ -1,6 +1,6 @@
 package io.eventuate.javaclient.restclient;
 
-import io.eventuate.javaclient.commonimpl.JSonMapper;
+import io.eventuate.common.json.mapper.JSonMapper;
 import org.apache.commons.io.IOUtils;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;

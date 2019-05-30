@@ -1,6 +1,7 @@
 package io.eventuate.javaclient.spring.jdbc;
 
 import io.eventuate.*;
+import io.eventuate.common.id.generator.Int128;
 import io.eventuate.javaclient.commonimpl.*;
 import io.eventuate.javaclient.commonimpl.sync.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.sync.AggregateEvents;

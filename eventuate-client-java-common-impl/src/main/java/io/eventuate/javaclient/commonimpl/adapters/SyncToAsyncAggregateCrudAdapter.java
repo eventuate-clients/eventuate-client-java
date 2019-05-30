@@ -3,7 +3,7 @@ package io.eventuate.javaclient.commonimpl.adapters;
 import io.eventuate.Aggregate;
 import io.eventuate.CompletableFutureUtil;
 import io.eventuate.EntityIdAndType;
-import io.eventuate.Int128;
+import io.eventuate.common.id.generator.Int128;
 import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
 import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;
 import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
