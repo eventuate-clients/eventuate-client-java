@@ -2,7 +2,7 @@ package io.eventuate.javaclient.stompclient;
 
 import io.eventuate.SubscriberOptions;
 import io.eventuate.common.json.mapper.JSonMapper;
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.javaclient.restclient.AbstractApiComplianceTest;
 import org.junit.Test;
 

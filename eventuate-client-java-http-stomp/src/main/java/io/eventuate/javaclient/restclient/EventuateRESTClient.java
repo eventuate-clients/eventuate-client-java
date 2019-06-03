@@ -1,7 +1,7 @@
 package io.eventuate.javaclient.restclient;
 
 import io.eventuate.*;
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.common.json.mapper.JSonMapper;
 import io.eventuate.javaclient.commonimpl.*;
 import io.eventuate.javaclient.stompclient.EventuateCredentials;

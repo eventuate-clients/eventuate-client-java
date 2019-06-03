@@ -1,6 +1,6 @@
 package io.eventuate;
 
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class EntityWithIdAndVersion<T> {

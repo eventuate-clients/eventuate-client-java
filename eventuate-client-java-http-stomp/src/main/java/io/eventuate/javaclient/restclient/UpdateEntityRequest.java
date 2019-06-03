@@ -1,7 +1,7 @@
 package io.eventuate.javaclient.restclient;
 
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 
 import java.util.List;
 

@@ -3,7 +3,7 @@ package io.eventuate.javaclient.commonimpl;
 import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.SaveOptions;
 import io.eventuate.Snapshot;
 import io.eventuate.UpdateOptions;

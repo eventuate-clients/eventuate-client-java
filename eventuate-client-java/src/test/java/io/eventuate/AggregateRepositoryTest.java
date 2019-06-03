@@ -1,6 +1,6 @@
 package io.eventuate;
 
-import io.eventuate.common.id.generator.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.example.banking.domain.Account;
 import io.eventuate.example.banking.domain.AccountCommand;
 import io.eventuate.example.banking.domain.AccountCreatedEvent;
