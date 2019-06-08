@@ -2,9 +2,9 @@ apply plugin: PublicModulePlugin
 
 dependencies {
     compile project(":eventuate-client-java-common-impl")
+    compile "io.eventuate.common:eventuate-common-id:$eventuateCommonVersion"
     compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-
-    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+    compile "io.eventuate.common:eventuate-common-jdbc:$eventuateCommonVersion"
 
 }

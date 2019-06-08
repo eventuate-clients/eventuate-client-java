@@ -2,7 +2,7 @@ package io.eventuate.javaclient.restclient;
 
 import io.eventuate.javaclient.commonimpl.EventIdTypeAndData;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;

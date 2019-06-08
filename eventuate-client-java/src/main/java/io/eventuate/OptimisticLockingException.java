@@ -1,5 +1,7 @@
 package io.eventuate;
 
+import io.eventuate.common.id.Int128;
+
 public class OptimisticLockingException extends EventuateClientException {
 
   private EntityIdAndType entityIdAndType;

@@ -1,6 +1,7 @@
 package io.eventuate.testutil;
 
 import io.eventuate.*;
+import io.eventuate.common.id.Int128;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;

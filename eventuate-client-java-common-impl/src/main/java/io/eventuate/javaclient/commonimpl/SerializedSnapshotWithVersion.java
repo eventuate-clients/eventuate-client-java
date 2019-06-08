@@ -1,6 +1,6 @@
 package io.eventuate.javaclient.commonimpl;
 
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 
 public class SerializedSnapshotWithVersion {
 

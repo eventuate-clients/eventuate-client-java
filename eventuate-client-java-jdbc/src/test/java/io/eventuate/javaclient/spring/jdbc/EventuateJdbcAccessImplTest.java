@@ -1,6 +1,8 @@
 package io.eventuate.javaclient.spring.jdbc;
 
 import io.eventuate.EntityIdAndType;
+import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
+import io.eventuate.common.jdbc.EventuateSchema;
 import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
@@ -31,9 +33,16 @@ public abstract class EventuateJdbcAccessImplTest {
     }
 
     @Bean
+    public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(JdbcTemplate jdbcTemplate) {
+      return new EventuateCommonJdbcOperations(jdbcTemplate);
+    }
+
+    @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate, EventuateSchema eventuateSchema) {
-      return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateSchema);
+    public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate,
+                                                   EventuateCommonJdbcOperations eventuateCommonJdbcOperations,
+                                                   EventuateSchema eventuateSchema) {
+      return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateCommonJdbcOperations, eventuateSchema);
     }
   }
 

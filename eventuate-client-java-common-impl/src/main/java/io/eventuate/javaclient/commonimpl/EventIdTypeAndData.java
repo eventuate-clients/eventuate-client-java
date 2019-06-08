@@ -1,6 +1,6 @@
 package io.eventuate.javaclient.commonimpl;
 
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;

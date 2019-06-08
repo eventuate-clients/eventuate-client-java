@@ -2,7 +2,7 @@ package io.eventuate.javaclient.commonimpl.sync;
 
 import io.eventuate.Aggregate;
 import io.eventuate.EntityIdAndType;
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.javaclient.commonimpl.*;
 
 import java.util.List;

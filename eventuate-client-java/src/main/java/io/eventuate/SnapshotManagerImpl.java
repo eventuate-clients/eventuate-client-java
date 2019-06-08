@@ -1,5 +1,7 @@
 package io.eventuate;
 
+import io.eventuate.common.id.Int128;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

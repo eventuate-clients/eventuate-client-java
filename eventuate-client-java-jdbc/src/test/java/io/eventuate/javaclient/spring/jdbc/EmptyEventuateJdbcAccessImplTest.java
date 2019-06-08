@@ -1,5 +1,6 @@
 package io.eventuate.javaclient.spring.jdbc;
 
+import io.eventuate.common.jdbc.EventuateSchema;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;

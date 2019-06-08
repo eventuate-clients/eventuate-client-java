@@ -3,10 +3,11 @@ package io.eventuate.javaclient.commonimpl;
 import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
 import io.eventuate.FindOptions;
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.SaveOptions;
 import io.eventuate.Snapshot;
 import io.eventuate.UpdateOptions;
+import io.eventuate.common.json.mapper.JSonMapper;
 
 import java.util.List;
 import java.util.Map;

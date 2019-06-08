@@ -3,6 +3,7 @@ package io.eventuate.javaclient.commonimpl;
 import io.eventuate.DispatchedEvent;
 import io.eventuate.EndOfCurrentEventsReachedEvent;
 import io.eventuate.Event;
+import io.eventuate.common.json.mapper.JSonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

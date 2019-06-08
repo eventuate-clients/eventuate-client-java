@@ -4,7 +4,7 @@ import io.eventuate.Aggregate;
 import io.eventuate.Aggregates;
 import io.eventuate.Event;
 import io.eventuate.EventWithMetadata;
-import io.eventuate.Int128;
+import io.eventuate.common.id.Int128;
 import io.eventuate.MissingApplyEventMethodStrategy;
 import io.eventuate.Snapshot;
 import io.eventuate.SnapshotStrategy;

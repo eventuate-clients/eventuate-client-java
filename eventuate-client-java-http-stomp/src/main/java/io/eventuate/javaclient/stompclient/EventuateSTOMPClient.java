@@ -2,7 +2,7 @@ package io.eventuate.javaclient.stompclient;
 
 import io.eventuate.SubscriberOptions;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
-import io.eventuate.javaclient.commonimpl.JSonMapper;
+import io.eventuate.common.json.mapper.JSonMapper;
 import io.eventuate.javaclient.commonimpl.SerializedEvent;
 import io.eventuate.EventContext;
 import io.eventuate.javaclient.restclient.VertxUtil;
@@ -35,14 +35,20 @@ public class EventuateSTOMPClient implements AggregateEvents {
   private String host;
   private boolean useSsl;
   private int port;
+  private Map<String, String> customConnectHeaders;
 
   public EventuateSTOMPClient(Vertx vertx, EventuateCredentials eventuateCredentials, URI uri) {
+    this(vertx, eventuateCredentials, uri, Collections.emptyMap());
+  }
+
+  public EventuateSTOMPClient(Vertx vertx, EventuateCredentials eventuateCredentials, URI uri, Map<String, String> customConnectHeaders) {
     this.vertx = vertx;
     this.context = VertxUtil.getContext(vertx);
     this.eventuateCredentials = eventuateCredentials;
     this.host = uri.getHost();
     this.port = uri.getPort();
     this.useSsl = uri.getScheme().startsWith("stomp+ssl");
+    this.customConnectHeaders = customConnectHeaders;
     if (logger.isInfoEnabled())
       logger.debug("STOMP connection: " + Arrays.asList(host, port, useSsl));
   }
@@ -69,7 +75,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
     options.setPasscode(eventuateCredentials.getApiKeySecret());
     options.setHeartbeat(new JsonObject().put("x", 60 * 1000).put("y", 60 * 1000));
 
-    stompClient = new MyStompClientImpl(vertx, options);
+    stompClient = new MyStompClientImpl(vertx, options, customConnectHeaders);
 
     stompClient.closeHandler(this::handleClose);
 

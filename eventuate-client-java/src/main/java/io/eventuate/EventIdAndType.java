@@ -1,6 +1,8 @@
 package io.eventuate;
 
 
+import io.eventuate.common.id.Int128;
+
 public class EventIdAndType {
 
   private Int128 id;
