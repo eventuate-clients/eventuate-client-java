@@ -71,10 +71,6 @@ subprojects {
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = "2.11"
-}
-
 gradle.projectsEvaluated {
     task aggregateJavaDocs(type: Javadoc) {
         description = 'Aggregates Javadoc API documentation of all subprojects.'

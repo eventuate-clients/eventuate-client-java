@@ -6,7 +6,6 @@ import io.eventuate.sync.AggregateRepository;
 import io.eventuate.example.banking.domain.Account;
 import io.eventuate.example.banking.domain.AccountCommand;
 import io.eventuate.example.banking.domain.CreateAccountCommand;
-import io.eventuate.javaclient.spring.tests.common.AbstractAccountIntegrationSyncTest;
 import io.eventuate.testutil.ReceivedEvent;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +18,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 

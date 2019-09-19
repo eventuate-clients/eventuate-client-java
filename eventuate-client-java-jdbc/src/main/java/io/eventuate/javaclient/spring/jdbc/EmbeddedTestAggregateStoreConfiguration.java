@@ -11,9 +11,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 
@@ -33,8 +35,8 @@ public class EmbeddedTestAggregateStoreConfiguration {
   }
 
   @Bean
-  public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
-    return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateCommonJdbcOperations);
+  public EventuateJdbcAccess eventuateJdbcAccess(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
+    return new EventuateJdbcAccessImpl(transactionTemplate, jdbcTemplate, eventuateCommonJdbcOperations);
   }
 
   @Bean
@@ -63,5 +65,8 @@ public class EmbeddedTestAggregateStoreConfiguration {
     return new JdkTimerBasedEventuateClientScheduler();
   }
 
-
+  @Bean
+  public TransactionTemplate transactionTemplate(DataSource dataSource) {
+    return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+  }
 }

@@ -1,11 +1,13 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventuateAggregateStore;
+import io.eventuate.SubscriptionsRegistry;
 import io.eventuate.javaclient.domain.EventHandlerProcessor;
 import io.eventuate.javaclient.domain.EventHandlerProcessorDispatchedEventReturningCompletableFuture;
 import io.eventuate.javaclient.domain.EventHandlerProcessorDispatchedEventReturningVoid;
 import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningCompletableFuture;
 import io.eventuate.javaclient.domain.EventHandlerProcessorEventHandlerContextReturningVoid;
+import io.eventuate.javaclient.eventdispatcher.EventDispatcherInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

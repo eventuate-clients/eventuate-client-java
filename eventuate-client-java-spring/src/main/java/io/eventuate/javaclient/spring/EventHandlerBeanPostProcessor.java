@@ -1,10 +1,10 @@
 package io.eventuate.javaclient.spring;
 
 import io.eventuate.EventSubscriber;
+import io.eventuate.javaclient.eventdispatcher.EventDispatcherInitializer;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
 
 /**

@@ -1,8 +1,7 @@
 package io.eventuate.javaclient.spring.testutil;
 
-import io.eventuate.javaclient.spring.RegisteredSubscription;
-import io.eventuate.javaclient.spring.SubscriptionsRegistry;
-import org.junit.Assert;
+import io.eventuate.RegisteredSubscription;
+import io.eventuate.SubscriptionsRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;

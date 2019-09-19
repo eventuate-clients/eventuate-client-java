@@ -14,6 +14,8 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
@@ -39,10 +41,16 @@ public abstract class EventuateJdbcAccessImplTest {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate,
+    public EventuateJdbcAccess eventuateJdbcAccess(TransactionTemplate transactionTemplate,
+                                                   JdbcTemplate jdbcTemplate,
                                                    EventuateCommonJdbcOperations eventuateCommonJdbcOperations,
                                                    EventuateSchema eventuateSchema) {
-      return new EventuateJdbcAccessImpl(jdbcTemplate, eventuateCommonJdbcOperations, eventuateSchema);
+      return new EventuateJdbcAccessImpl(transactionTemplate, jdbcTemplate, eventuateCommonJdbcOperations, eventuateSchema);
+    }
+
+    @Bean
+    public TransactionTemplate transactionTemplate(DataSource dataSource) {
+      return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
     }
   }
 
