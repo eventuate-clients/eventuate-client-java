@@ -23,7 +23,7 @@ public class EventHandlerRegistrar {
     for (Subscriber subscriber : subscribers) {
       Class<?> actualClass = AopUtils.getTargetClass(subscriber);
       String name = subscriber.getClass().getSimpleName();
-      name = name.replace(name.charAt(0), String.valueOf(name.charAt(0)).toLowerCase().charAt(0));
+      name = String.valueOf(name.charAt(0)).toLowerCase() + name.substring(1);
       eventDispatcherInitializer.registerEventHandler(subscriber, name, actualClass);
     }
   }
