@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-io.eventuate.javaclient.spring.jdbc.EventuateJdbcEventStoreConfiguration
+io.eventuate.javaclient.jdbc.spring.EventuateJdbcEventStoreConfiguration

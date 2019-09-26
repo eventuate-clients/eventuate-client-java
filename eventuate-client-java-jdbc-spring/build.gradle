@@ -1,0 +1,11 @@
+apply plugin: PublicModulePlugin
+
+dependencies {
+    compile project(":eventuate-client-java-jdbc")
+    compile project(":eventuate-client-java-jdbc-common-tests")
+    compile project(":eventuate-client-java-spring-common")
+    compile project(":eventuate-client-java-spring")
+
+    testCompile project(":eventuate-client-java-test-util")
+    testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+}

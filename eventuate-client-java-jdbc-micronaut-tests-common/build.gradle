@@ -4,8 +4,6 @@ plugins {
 
 apply plugin: PublicModulePlugin
 
-
-
 repositories {
     mavenCentral()
     maven { url "https://jcenter.bintray.com" }
@@ -18,14 +16,19 @@ dependencyManagement {
 }
 
 dependencies {
-    compile project(":eventuate-client-java")
-    compile project(":eventuate-client-java-event-handling")
-    compile project(":eventuate-client-java-event-dispatching")
+    compile project(":eventuate-client-java-jdbc-micronaut")
 
+    compile "io.micronaut:micronaut-spring"
     annotationProcessor "io.micronaut:micronaut-inject-java"
     annotationProcessor "io.micronaut:micronaut-validation"
     annotationProcessor "io.micronaut.configuration:micronaut-openapi"
     compile "io.micronaut:micronaut-inject"
     compile "io.micronaut:micronaut-validation"
     compile "io.micronaut:micronaut-runtime"
+    compile  'org.springframework:spring-jdbc'
+    compile 'io.micronaut.configuration:micronaut-jdbc-hikari'
+    annotationProcessor "io.micronaut:micronaut-inject-java"
+    compile "org.junit.jupiter:junit-jupiter-api"
+    compile "io.micronaut.test:micronaut-test-junit5"
+    runtime "org.junit.jupiter:junit-jupiter-engine"
 }

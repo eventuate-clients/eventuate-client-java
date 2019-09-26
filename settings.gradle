@@ -13,6 +13,10 @@ include 'eventuate-client-java-http-stomp-spring-autoconfigure'
 
 include 'eventuate-client-java-jdbc-common'
 include 'eventuate-client-java-jdbc'
+include 'eventuate-client-java-jdbc-spring'
+include 'eventuate-client-java-jdbc-micronaut'
+include 'eventuate-client-java-jdbc-micronaut-tests'
+include 'eventuate-client-java-jdbc-common-tests'
 include 'eventuate-client-java-jdbc-autoconfigure'
 
 include 'eventuate-client-java-embedded-test-aggregate-store'
