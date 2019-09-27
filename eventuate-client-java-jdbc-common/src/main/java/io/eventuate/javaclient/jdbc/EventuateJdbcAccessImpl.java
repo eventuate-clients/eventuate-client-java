@@ -178,7 +178,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
       throw new DuplicateTriggeringEventException();
     }
     if (!snapshot.isPresent() && events.isEmpty())
-      throw new EntityNotFoundException();
+      throw new EntityNotFoundException(aggregateType, entityId);
     else {
       return new LoadedEvents(snapshot.map(LoadedSnapshot::getSerializedSnapshot), events.stream().map(e -> e.event).collect(Collectors.toList()));
     }

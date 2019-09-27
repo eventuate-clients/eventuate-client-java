@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 import static java.util.Collections.*;
 import static org.junit.Assert.*;
 
-@MicronautTest
+@MicronautTest(transactional = false)
 public class EventuateEmbeddedTestAggregateStoreTest {
 
   private final EventContext ectx = new EventContext("MyEventToken");

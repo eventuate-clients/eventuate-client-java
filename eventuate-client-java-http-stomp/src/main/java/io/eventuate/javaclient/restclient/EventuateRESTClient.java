@@ -162,7 +162,7 @@ public class EventuateRESTClient implements AggregateCrud {
                       try {
                         GetEntityResponse r = JSonMapper.fromJson(body.toString(), GetEntityResponse.class);
                         if (r.getEvents().isEmpty())
-                          cf.completeExceptionally(new EntityNotFoundException());
+                          cf.completeExceptionally(new EntityNotFoundException(aggregateType, entityId));
                         else {
                           Optional<SerializedSnapshotWithVersion> snapshot = Optional.empty();  // TODO - retrieve snapshot
                           cf.complete(new LoadedEvents(snapshot, r.getEvents()));
