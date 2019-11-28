@@ -1,6 +1,10 @@
 package io.eventuate.javaclient.jdbc.spring;
 
 import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
+import io.eventuate.common.jdbc.EventuateJdbcStatementExecutor;
+import io.eventuate.common.jdbc.EventuateTransactionTemplate;
+import io.eventuate.common.jdbc.spring.common.EventuateSpringJdbcStatementExecutor;
+import io.eventuate.common.jdbc.spring.common.EventuateSpringTransactionTemplate;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.javaclient.commonimpl.adapters.SyncToAsyncAggregateCrudAdapter;
@@ -34,13 +38,23 @@ public class EmbeddedTestAggregateStoreConfiguration {
   }
 
   @Bean
-  public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(JdbcTemplate jdbcTemplate) {
-    return new EventuateCommonJdbcOperations(jdbcTemplate);
+  public EventuateTransactionTemplate eventuateTransactionTemplate(TransactionTemplate transactionTemplate) {
+    return new EventuateSpringTransactionTemplate(transactionTemplate);
   }
 
   @Bean
-  public EventuateJdbcAccess eventuateJdbcAccess(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
-    return new EventuateJdbcAccessImpl(transactionTemplate, jdbcTemplate, eventuateCommonJdbcOperations);
+  public EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor(JdbcTemplate jdbcTemplate) {
+    return new EventuateSpringJdbcStatementExecutor(jdbcTemplate);
+  }
+
+  @Bean
+  public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor) {
+    return new EventuateCommonJdbcOperations(eventuateJdbcStatementExecutor);
+  }
+
+  @Bean
+  public EventuateJdbcAccess eventuateJdbcAccess(EventuateTransactionTemplate eventuateTransactionTemplate, EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
+    return new EventuateJdbcAccessImpl(eventuateTransactionTemplate, eventuateJdbcStatementExecutor, eventuateCommonJdbcOperations);
   }
 
   @Bean

@@ -1,7 +1,8 @@
 package io.eventuate.javaclient.jdbc.spring;
 
-import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
-import io.eventuate.common.jdbc.EventuateSchema;
+import io.eventuate.common.jdbc.*;
+import io.eventuate.common.jdbc.spring.common.EventuateSpringJdbcStatementExecutor;
+import io.eventuate.common.jdbc.spring.common.EventuateSpringTransactionTemplate;
 import io.eventuate.javaclient.jdbc.EventuateJdbcAccess;
 import io.eventuate.javaclient.jdbc.EventuateJdbcAccessImpl;
 import io.eventuate.javaclient.jdbc.common.tests.CommonEventuateJdbcAccessImplTest;
@@ -21,32 +22,53 @@ public abstract class EventuateJdbcAccessImplTest extends CommonEventuateJdbcAcc
   public static class Config {
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public EventuateTransactionTemplate eventuateTransactionTemplate(TransactionTemplate transactionTemplate) {
+      return new EventuateSpringTransactionTemplate(transactionTemplate);
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor(JdbcTemplate jdbcTemplate) {
+      return new EventuateSpringJdbcStatementExecutor(jdbcTemplate);
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor) {
+      return new EventuateCommonJdbcOperations(eventuateJdbcStatementExecutor);
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public EventuateJdbcAccess eventuateJdbcAccess(EventuateTransactionTemplate eventuateTransactionTemplate, EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
+      return new EventuateJdbcAccessImpl(eventuateTransactionTemplate, eventuateJdbcStatementExecutor, eventuateCommonJdbcOperations);
+    }
+
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     public JdbcTemplate jdbcTemplate(DataSource dataSource) {
       return new JdbcTemplate(dataSource);
     }
 
     @Bean
-    public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(JdbcTemplate jdbcTemplate) {
-      return new EventuateCommonJdbcOperations(jdbcTemplate);
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public EventuateJdbcAccess eventuateJdbcAccess(EventuateTransactionTemplate eventuateTransactionTemplate,
+                                                   EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor,
+                                                   EventuateCommonJdbcOperations eventuateCommonJdbcOperations,
+                                                   EventuateSchema eventuateSchema) {
+      return new EventuateJdbcAccessImpl(eventuateTransactionTemplate, eventuateJdbcStatementExecutor, eventuateCommonJdbcOperations, eventuateSchema);
     }
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    public EventuateJdbcAccess eventuateJdbcAccess(TransactionTemplate transactionTemplate,
-                                                   JdbcTemplate jdbcTemplate,
-                                                   EventuateCommonJdbcOperations eventuateCommonJdbcOperations,
-                                                   EventuateSchema eventuateSchema) {
-      return new EventuateJdbcAccessImpl(transactionTemplate, jdbcTemplate, eventuateCommonJdbcOperations, eventuateSchema);
-    }
-
-    @Bean
     public TransactionTemplate transactionTemplate(DataSource dataSource) {
       return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
     }
   }
 
   @Autowired
-  private JdbcTemplate jdbcTemplate;
+  private EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor;
 
   @Autowired
   private EventuateJdbcAccess eventuateJdbcAccess;
@@ -71,8 +93,8 @@ public abstract class EventuateJdbcAccessImplTest extends CommonEventuateJdbcAcc
   }
 
   @Override
-  protected JdbcTemplate getJdbcTemplate() {
-    return jdbcTemplate;
+  protected EventuateJdbcStatementExecutor getEventuateJdbcStatementExecutor() {
+    return eventuateJdbcStatementExecutor;
   }
 
   @Override

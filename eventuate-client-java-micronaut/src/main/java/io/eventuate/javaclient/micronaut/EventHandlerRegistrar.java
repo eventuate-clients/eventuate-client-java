@@ -12,11 +12,13 @@ import javax.inject.Inject;
 @Context
 public class EventHandlerRegistrar {
 
-  @Inject
   private EventDispatcherInitializer eventDispatcherInitializer;
-
-  @Inject
   private Subscriber[] subscribers;
+
+  public EventHandlerRegistrar(EventDispatcherInitializer eventDispatcherInitializer, Subscriber[] subscribers) {
+    this.eventDispatcherInitializer = eventDispatcherInitializer;
+    this.subscribers = subscribers;
+  }
 
   @PostConstruct
   public void registerEventHandlers() throws BeansException {

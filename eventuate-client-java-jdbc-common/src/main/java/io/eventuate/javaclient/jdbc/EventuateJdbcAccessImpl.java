@@ -6,12 +6,11 @@ import io.eventuate.EntityAlreadyExistsException;
 import io.eventuate.EntityIdAndType;
 import io.eventuate.EntityNotFoundException;
 import io.eventuate.EventContext;
+import io.eventuate.OptimisticLockingException;
 import io.eventuate.common.id.IdGenerator;
 import io.eventuate.common.id.IdGeneratorImpl;
 import io.eventuate.common.id.Int128;
-import io.eventuate.OptimisticLockingException;
-import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
-import io.eventuate.common.jdbc.EventuateSchema;
+import io.eventuate.common.jdbc.*;
 import io.eventuate.javaclient.commonimpl.AggregateCrudFindOptions;
 import io.eventuate.javaclient.commonimpl.AggregateCrudSaveOptions;
 import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
@@ -23,11 +22,6 @@ import io.eventuate.javaclient.commonimpl.SerializedSnapshot;
 import io.eventuate.javaclient.commonimpl.SerializedSnapshotWithVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.support.DataAccessUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,8 +30,8 @@ import java.util.stream.Collectors;
 public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
-  private TransactionTemplate transactionTemplate;
-  private JdbcTemplate jdbcTemplate;
+  private EventuateTransactionTemplate eventuateTransactionTemplate;
+  private EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor;
   private String entityTable;
   private String eventTable;
   private String snapshotTable;
@@ -45,20 +39,20 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   private EventuateCommonJdbcOperations eventuateCommonJdbcOperations;
   private EventuateSchema eventuateSchema;
 
-  public EventuateJdbcAccessImpl(TransactionTemplate transactionTemplate,
-                                 JdbcTemplate jdbcTemplate,
+  public EventuateJdbcAccessImpl(EventuateTransactionTemplate eventuateTransactionTemplate,
+                                 EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor,
                                  EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
 
-    this(transactionTemplate, jdbcTemplate, eventuateCommonJdbcOperations, new EventuateSchema());
+    this(eventuateTransactionTemplate, eventuateJdbcStatementExecutor, eventuateCommonJdbcOperations, new EventuateSchema());
   }
 
-  public EventuateJdbcAccessImpl(TransactionTemplate transactionTemplate,
-                                 JdbcTemplate jdbcTemplate,
+  public EventuateJdbcAccessImpl(EventuateTransactionTemplate eventuateTransactionTemplate,
+                                 EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor,
                                  EventuateCommonJdbcOperations eventuateCommonJdbcOperations,
                                  EventuateSchema eventuateSchema) {
 
-    this.transactionTemplate = transactionTemplate;
-    this.jdbcTemplate = jdbcTemplate;
+    this.eventuateTransactionTemplate = eventuateTransactionTemplate;
+    this.eventuateJdbcStatementExecutor = eventuateJdbcStatementExecutor;
     this.eventuateCommonJdbcOperations = eventuateCommonJdbcOperations;
     this.eventuateSchema = eventuateSchema;
 
@@ -71,7 +65,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
   @Override
   public SaveUpdateResult save(String aggregateType, List<EventTypeAndData> events, Optional<AggregateCrudSaveOptions> saveOptions) {
-    return transactionTemplate.execute(status -> saveWithoutTransaction(aggregateType, events, saveOptions));
+    return eventuateTransactionTemplate.executeInTransaction(() -> saveWithoutTransaction(aggregateType, events, saveOptions));
   }
 
   private SaveUpdateResult saveWithoutTransaction(String aggregateType, List<EventTypeAndData> events, Optional<AggregateCrudSaveOptions> saveOptions) {
@@ -81,9 +75,9 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
     Int128 entityVersion = last(eventsWithIds).getId();
 
     try {
-      jdbcTemplate.update(String.format("INSERT INTO %s (entity_type, entity_id, entity_version) VALUES (?, ?, ?)", entityTable),
+      eventuateJdbcStatementExecutor.update(String.format("INSERT INTO %s (entity_type, entity_id, entity_version) VALUES (?, ?, ?)", entityTable),
               aggregateType, entityId, entityVersion.asString());
-    } catch (DuplicateKeyException e) {
+    } catch (EventuateDuplicateKeyException e) {
       throw new EntityAlreadyExistsException();
     }
 
@@ -113,7 +107,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
     return new EventIdTypeAndData(idGenerator.genId(), eventTypeAndData.getEventType(), eventTypeAndData.getEventData(), eventTypeAndData.getMetadata());
   }
 
-  private final RowMapper<EventAndTrigger> eventAndTriggerRowMapper = (rs, rowNum) -> {
+  private final EventuateRowMapper<EventAndTrigger> eventAndTriggerRowMapper = (rs, rowNum) -> {
     String eventId = rs.getString("event_id");
     String eventType = rs.getString("event_type");
     String eventData = rs.getString("event_data");
@@ -127,44 +121,38 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
   public <T extends Aggregate<T>> LoadedEvents find(String aggregateType,
                                                     String entityId,
                                                     Optional<AggregateCrudFindOptions> findOptions) {
-    return transactionTemplate.execute(status -> findWithoutTransaction(aggregateType, entityId, findOptions));
+    return eventuateTransactionTemplate.executeInTransaction(() -> findWithoutTransaction(aggregateType, entityId, findOptions));
   }
 
   private <T extends Aggregate<T>> LoadedEvents findWithoutTransaction(String aggregateType,
                                                     String entityId,
                                                     Optional<AggregateCrudFindOptions> findOptions) {
-    Optional<LoadedSnapshot> snapshot = Optional.ofNullable(DataAccessUtils.singleResult(
-            jdbcTemplate.query(
-                    String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
-                    (rs, rownum) -> {
-                      return new LoadedSnapshot(
-                              new SerializedSnapshotWithVersion(
-                                      new SerializedSnapshot(rs.getString("snapshot_type"), rs.getString("snapshot_json")),
-                                      Int128.fromString(rs.getString("entity_version"))),
-                              rs.getString("triggering_events"));
-                    },
-                    aggregateType,
-                    entityId
-            )
-    ));
-
-
-    snapshot.ifPresent(ss -> {
-      findOptions.flatMap(AggregateCrudFindOptions::getTriggeringEvent).ifPresent(te -> {
-        checkSnapshotForDuplicateEvent(ss, te);
-      });
-    });
+    Optional<LoadedSnapshot> snapshot =
+            eventuateJdbcStatementExecutor
+                    .query(
+                            String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
+                            (rs, rownum) ->
+                              new LoadedSnapshot(
+                                      new SerializedSnapshotWithVersion(
+                                              new SerializedSnapshot(rs.getString("snapshot_type"),
+                                                      rs.getString("snapshot_json")),
+                                              Int128.fromString(rs.getString("entity_version"))),
+                                      rs.getString("triggering_events")),
+                            aggregateType,
+                            entityId)
+                    .stream()
+                    .findFirst();
 
 
     List<EventAndTrigger> events;
 
     if (snapshot.isPresent()) {
-      events = jdbcTemplate.query(
+      events = eventuateJdbcStatementExecutor.query(
               String.format("SELECT * FROM %s where entity_type = ? and entity_id = ? and event_id > ? order by event_id asc", eventTable),
               eventAndTriggerRowMapper, aggregateType, entityId, snapshot.get().getSerializedSnapshot().getEntityVersion().asString()
       );
     } else {
-      events = jdbcTemplate.query(
+      events = eventuateJdbcStatementExecutor.query(
               String.format("SELECT * FROM %s where entity_type = ? and entity_id = ? order by event_id asc", eventTable),
               eventAndTriggerRowMapper, aggregateType, entityId
       );
@@ -190,7 +178,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
                                  List<EventTypeAndData> events,
                                  Optional<AggregateCrudUpdateOptions> updateOptions) {
 
-    return transactionTemplate.execute(status -> updateWithoutTransaction(entityIdAndType, entityVersion, events, updateOptions));
+    return eventuateTransactionTemplate.executeInTransaction(() -> updateWithoutTransaction(entityIdAndType, entityVersion, events, updateOptions));
   }
 
   public SaveUpdateResult updateWithoutTransaction(EntityIdAndType entityIdAndType,
@@ -209,7 +197,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
     Int128 updatedEntityVersion = last(eventsWithIds).getId();
 
-    int count = jdbcTemplate.update(String.format("UPDATE %s SET entity_version = ? WHERE entity_type = ? and entity_id = ? and entity_version = ?", entityTable),
+    int count = eventuateJdbcStatementExecutor.update(String.format("UPDATE %s SET entity_version = ? WHERE entity_type = ? and entity_id = ? and entity_version = ?", entityTable),
             updatedEntityVersion.asString(),
             entityType,
             entityId,
@@ -223,30 +211,33 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
     updateOptions.flatMap(AggregateCrudUpdateOptions::getSnapshot).ifPresent(ss -> {
 
-      Optional<LoadedSnapshot> previousSnapshot = Optional.ofNullable(DataAccessUtils.singleResult(
-              jdbcTemplate.query(
-                      String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
-                      (rs, rownum) -> {
-                        return new LoadedSnapshot(
-                                new SerializedSnapshotWithVersion(
-                                        new SerializedSnapshot(rs.getString("snapshot_type"), rs.getString("snapshot_json")),
-                                        Int128.fromString(rs.getString("entity_version"))), rs.getString("triggering_events"));
-                      },
-                      aggregateType,
-                      entityId
-              )
-      ));
+      Optional<LoadedSnapshot> previousSnapshot =
+              eventuateJdbcStatementExecutor
+                      .query(
+                              String.format("select snapshot_type, snapshot_json, entity_version, triggering_Events from %s where entity_type = ? and entity_id = ? order by entity_version desc LIMIT 1", snapshotTable),
+                              (rs, rownum) ->
+                                new LoadedSnapshot(
+                                        new SerializedSnapshotWithVersion(
+                                                new SerializedSnapshot(rs.getString("snapshot_type"),
+                                                        rs.getString("snapshot_json")),
+                                                Int128.fromString(rs.getString("entity_version"))),
+                                        rs.getString("triggering_events")),
+                              aggregateType,
+                              entityId)
+                      .stream()
+                      .findFirst();
+
 
 
       List<EventAndTrigger> oldEvents;
 
       if (previousSnapshot.isPresent()) {
-        oldEvents = jdbcTemplate.query(
+        oldEvents = eventuateJdbcStatementExecutor.query(
                 String.format("SELECT * FROM %s where entity_type = ? and entity_id = ? and event_id > ? order by event_id asc", eventTable),
                 eventAndTriggerRowMapper, aggregateType, entityId, previousSnapshot.get().getSerializedSnapshot().getEntityVersion().asString()
         );
       } else {
-        oldEvents = jdbcTemplate.query(
+        oldEvents = eventuateJdbcStatementExecutor.query(
                 String.format("SELECT * FROM %s where entity_type = ? and entity_id = ? order by event_id asc", eventTable),
                 eventAndTriggerRowMapper, aggregateType, entityId
         );
@@ -254,7 +245,7 @@ public class EventuateJdbcAccessImpl implements EventuateJdbcAccess {
 
       String triggeringEvents = snapshotTriggeringEvents(previousSnapshot, oldEvents, updateOptions.flatMap(AggregateCrudUpdateOptions::getTriggeringEvent));
 
-      jdbcTemplate.update(String.format("INSERT INTO %s (entity_type, entity_id, entity_version, snapshot_type, snapshot_json, triggering_events) VALUES (?, ?, ?, ?, ?, ?)", snapshotTable),
+      eventuateJdbcStatementExecutor.update(String.format("INSERT INTO %s (entity_type, entity_id, entity_version, snapshot_type, snapshot_json, triggering_events) VALUES (?, ?, ?, ?, ?, ?)", snapshotTable),
               entityType,
               entityId,
               updatedEntityVersion.asString(),

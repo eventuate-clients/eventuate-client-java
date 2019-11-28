@@ -1,5 +1,6 @@
 package io.eventuate.javaclient.jdbc.micronaut;
 
+import io.eventuate.common.jdbc.EventuateJdbcStatementExecutor;
 import io.eventuate.javaclient.jdbc.EventuateJdbcAccess;
 import io.eventuate.javaclient.jdbc.common.tests.CommonEventuateJdbcAccessImplTest;
 import io.micronaut.context.ApplicationContext;
@@ -7,17 +8,17 @@ import io.micronaut.runtime.context.scope.refresh.RefreshEvent;
 import io.micronaut.test.annotation.MicronautTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.inject.Inject;
 
 @MicronautTest(transactional = false)
 public class EventuateJdbcAccessImplTest extends CommonEventuateJdbcAccessImplTest {
+
   @Inject
   private ApplicationContext applicationContext;
 
   @Inject
-  private JdbcTemplate jdbcTemplate;
+  private EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor;
 
   @Inject
   private EventuateJdbcAccess eventuateJdbcAccess;
@@ -61,8 +62,8 @@ public class EventuateJdbcAccessImplTest extends CommonEventuateJdbcAccessImplTe
   }
 
   @Override
-  protected JdbcTemplate getJdbcTemplate() {
-    return jdbcTemplate;
+  protected EventuateJdbcStatementExecutor getEventuateJdbcStatementExecutor() {
+    return eventuateJdbcStatementExecutor;
   }
 
   @Override
