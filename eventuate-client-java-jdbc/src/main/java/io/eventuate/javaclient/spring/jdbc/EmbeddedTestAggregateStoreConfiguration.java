@@ -1,5 +1,8 @@
 package io.eventuate.javaclient.spring.jdbc;
 
+import io.eventuate.common.inmemorydatabase.EventuateCommonInMemoryDatabaseConfiguration;
+import io.eventuate.common.inmemorydatabase.EventuateDatabaseScriptSupplier;
+import io.eventuate.common.jdbc.EventuateCommonJdbcConfiguration;
 import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
@@ -11,26 +14,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.sql.DataSource;
+import java.util.Collections;
 
 @Configuration
 @EnableTransactionManagement
-@Import(EventuateCommonConfiguration.class)
+@Import({EventuateCommonConfiguration.class, EventuateCommonInMemoryDatabaseConfiguration.class,
+        EventuateCommonJdbcConfiguration.class})
 public class EmbeddedTestAggregateStoreConfiguration {
-
-  @Bean
-  public JdbcTemplate jdbcTemplate() {
-    return new JdbcTemplate(dataSource());
-  }
-
-  @Bean
-  public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(JdbcTemplate jdbcTemplate) {
-    return new EventuateCommonJdbcOperations(jdbcTemplate);
-  }
 
   @Bean
   public EventuateJdbcAccess eventuateJdbcAccess(JdbcTemplate jdbcTemplate, EventuateCommonJdbcOperations eventuateCommonJdbcOperations) {
@@ -43,9 +35,8 @@ public class EmbeddedTestAggregateStoreConfiguration {
   }
 
   @Bean
-  public DataSource dataSource() {
-    EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
-    return builder.setType(EmbeddedDatabaseType.H2).addScript("eventuate-embedded-schema.sql").build();
+  public EventuateDatabaseScriptSupplier eventuateCommonInMemoryScriptSupplierForEventuateLocal() {
+    return () -> Collections.singletonList("eventuate-embedded-schema.sql");
   }
 
   @Bean
