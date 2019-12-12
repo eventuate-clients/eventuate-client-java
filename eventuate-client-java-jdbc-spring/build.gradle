@@ -8,6 +8,8 @@ dependencies {
     compile project(":eventuate-client-java-spring-common")
     compile project(":eventuate-client-java-spring")
 
+    compile "io.eventuate.common:eventuate-common-in-memory-database:$eventuateCommonVersion"
+
     testCompile project(":eventuate-client-java-test-util")
     testCompile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 }

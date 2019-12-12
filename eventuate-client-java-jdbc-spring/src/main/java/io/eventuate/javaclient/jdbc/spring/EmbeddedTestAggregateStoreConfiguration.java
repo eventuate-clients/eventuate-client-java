@@ -1,5 +1,7 @@
 package io.eventuate.javaclient.jdbc.spring;
 
+import io.eventuate.common.inmemorydatabase.EventuateCommonInMemoryDatabaseConfiguration;
+import io.eventuate.common.inmemorydatabase.EventuateDatabaseScriptSupplier;
 import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
 import io.eventuate.common.jdbc.EventuateJdbcStatementExecutor;
 import io.eventuate.common.jdbc.EventuateTransactionTemplate;
@@ -20,21 +22,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.util.Collections;
 
 @Configuration
 @EnableTransactionManagement
-@Import(EventuateCommonConfiguration.class)
+@Import({EventuateCommonConfiguration.class, EventuateCommonInMemoryDatabaseConfiguration.class})
 public class EmbeddedTestAggregateStoreConfiguration {
 
   @Bean
-  public JdbcTemplate jdbcTemplate() {
-    return new JdbcTemplate(dataSource());
+  public EventuateDatabaseScriptSupplier eventuateCommonInMemoryScriptSupplierForEventuateLocal() {
+    return () -> Collections.singletonList("eventuate-embedded-schema.sql");
+  }
+
+  @Bean
+  public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    return new JdbcTemplate(dataSource);
   }
 
   @Bean
@@ -60,12 +66,6 @@ public class EmbeddedTestAggregateStoreConfiguration {
   @Bean
   public EventuateEmbeddedTestAggregateStore eventuateEmbeddedTestAggregateStore(EventuateJdbcAccess eventuateJdbcAccess) {
     return new EventuateEmbeddedTestAggregateStore(eventuateJdbcAccess);
-  }
-
-  @Bean
-  public DataSource dataSource() {
-    EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
-    return builder.setType(EmbeddedDatabaseType.H2).addScript("eventuate-embedded-schema.sql").build();
   }
 
   @Bean
