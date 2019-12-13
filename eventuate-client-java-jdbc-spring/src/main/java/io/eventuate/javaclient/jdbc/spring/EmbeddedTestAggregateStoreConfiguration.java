@@ -5,8 +5,7 @@ import io.eventuate.common.inmemorydatabase.EventuateDatabaseScriptSupplier;
 import io.eventuate.common.jdbc.EventuateCommonJdbcOperations;
 import io.eventuate.common.jdbc.EventuateJdbcStatementExecutor;
 import io.eventuate.common.jdbc.EventuateTransactionTemplate;
-import io.eventuate.common.jdbc.spring.common.EventuateSpringJdbcStatementExecutor;
-import io.eventuate.common.jdbc.spring.common.EventuateSpringTransactionTemplate;
+import io.eventuate.common.jdbc.spring.EventuateCommonJdbcOperationsConfiguration;
 import io.eventuate.javaclient.commonimpl.AggregateCrud;
 import io.eventuate.javaclient.commonimpl.AggregateEvents;
 import io.eventuate.javaclient.commonimpl.adapters.SyncToAsyncAggregateCrudAdapter;
@@ -20,7 +19,6 @@ import io.eventuate.javaclient.jdbc.EventuateJdbcAccessImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,32 +28,12 @@ import java.util.Collections;
 
 @Configuration
 @EnableTransactionManagement
-@Import({EventuateCommonConfiguration.class, EventuateCommonInMemoryDatabaseConfiguration.class})
+@Import({EventuateCommonConfiguration.class, EventuateCommonInMemoryDatabaseConfiguration.class, EventuateCommonJdbcOperationsConfiguration.class})
 public class EmbeddedTestAggregateStoreConfiguration {
 
   @Bean
   public EventuateDatabaseScriptSupplier eventuateCommonInMemoryScriptSupplierForEventuateLocal() {
     return () -> Collections.singletonList("eventuate-embedded-schema.sql");
-  }
-
-  @Bean
-  public JdbcTemplate jdbcTemplate(DataSource dataSource) {
-    return new JdbcTemplate(dataSource);
-  }
-
-  @Bean
-  public EventuateTransactionTemplate eventuateTransactionTemplate(TransactionTemplate transactionTemplate) {
-    return new EventuateSpringTransactionTemplate(transactionTemplate);
-  }
-
-  @Bean
-  public EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor(JdbcTemplate jdbcTemplate) {
-    return new EventuateSpringJdbcStatementExecutor(jdbcTemplate);
-  }
-
-  @Bean
-  public EventuateCommonJdbcOperations eventuateCommonJdbcOperations(EventuateJdbcStatementExecutor eventuateJdbcStatementExecutor) {
-    return new EventuateCommonJdbcOperations(eventuateJdbcStatementExecutor);
   }
 
   @Bean
