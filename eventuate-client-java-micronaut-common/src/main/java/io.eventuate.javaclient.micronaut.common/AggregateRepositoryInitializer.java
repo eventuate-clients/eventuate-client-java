@@ -10,14 +10,15 @@ import javax.inject.Inject;
 @Context
 public class AggregateRepositoryInitializer {
 
-  @Inject
   private CompositeMissingApplyEventMethodStrategy strategies;
-
-  @Inject
   private AggregateRepository[] aggregateRepositories;
-
-  @Inject
   private io.eventuate.sync.AggregateRepository[] syncAggregateRepositories;
+
+  public AggregateRepositoryInitializer(CompositeMissingApplyEventMethodStrategy strategies, AggregateRepository[] aggregateRepositories, io.eventuate.sync.AggregateRepository[] syncAggregateRepositories) {
+    this.strategies = strategies;
+    this.aggregateRepositories = aggregateRepositories;
+    this.syncAggregateRepositories = syncAggregateRepositories;
+  }
 
   @PostConstruct
   public void setMissingStrategies() {

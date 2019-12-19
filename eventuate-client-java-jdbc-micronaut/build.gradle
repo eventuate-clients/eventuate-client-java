@@ -19,7 +19,9 @@ dependencies {
     compile project(":eventuate-client-java-jdbc")
     compile project(":eventuate-client-java-micronaut-common")
     compile project(":eventuate-client-java-micronaut")
-    compile "io.eventuate.common:eventuate-common-jdbc-micronaut:$eventuateCommonVersion"
+    compile project(":eventuate-client-java-jdbc-common-tests")
+
+    compile "io.eventuate.common:eventuate-common-jdbc-micronaut-spring:$eventuateCommonVersion"
 
     compile "io.micronaut:micronaut-spring"
     annotationProcessor "io.micronaut:micronaut-inject-java"

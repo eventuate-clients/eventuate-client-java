@@ -1,6 +1,7 @@
 package io.eventuate.javaclient.jdbc.common.tests;
 
 import io.eventuate.EntityIdAndType;
+import io.eventuate.common.jdbc.EventuateJdbcStatementExecutor;
 import io.eventuate.javaclient.commonimpl.AggregateCrudUpdateOptions;
 import io.eventuate.javaclient.commonimpl.EventTypeAndData;
 import io.eventuate.javaclient.commonimpl.LoadedEvents;
@@ -8,7 +9,6 @@ import io.eventuate.javaclient.commonimpl.SerializedSnapshot;
 import io.eventuate.javaclient.jdbc.EventuateJdbcAccess;
 import io.eventuate.javaclient.jdbc.SaveUpdateResult;
 import org.junit.Assert;
-import org.springframework.jdbc.core.JdbcTemplate;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +21,7 @@ public abstract class CommonEventuateJdbcAccessImplTest {
   private static final String testEventType = "testEventType1";
   private static final String testEventData = "testEventData1";
 
-  protected abstract JdbcTemplate getJdbcTemplate();
+  protected abstract EventuateJdbcStatementExecutor getEventuateJdbcStatementExecutor();
   protected abstract EventuateJdbcAccess getEventuateJdbcAccess();
 
   protected abstract String readAllEventsSql();
@@ -33,10 +33,10 @@ public abstract class CommonEventuateJdbcAccessImplTest {
 
     getEventuateJdbcAccess().save(testAggregate, Collections.singletonList(eventTypeAndData), Optional.empty());
 
-    List<Map<String, Object>> events = getJdbcTemplate().queryForList(readAllEventsSql());
+    List<Map<String, Object>> events = getEventuateJdbcStatementExecutor().queryForList(readAllEventsSql());
     Assert.assertEquals(1, events.size());
 
-    List<Map<String, Object>> entities = getJdbcTemplate().queryForList(readAllEntitiesSql());
+    List<Map<String, Object>> entities = getEventuateJdbcStatementExecutor().queryForList(readAllEntitiesSql());
     Assert.assertEquals(1, entities.size());
   }
 
@@ -62,13 +62,13 @@ public abstract class CommonEventuateJdbcAccessImplTest {
             saveUpdateResult.getEntityIdVersionAndEventIds().getEntityVersion(),
             Collections.singletonList(eventTypeAndData), Optional.of(new AggregateCrudUpdateOptions(Optional.empty(), Optional.of(new SerializedSnapshot("", "")))));
 
-    List<Map<String, Object>> events = getJdbcTemplate().queryForList(readAllEventsSql());
+    List<Map<String, Object>> events = getEventuateJdbcStatementExecutor().queryForList(readAllEventsSql());
     Assert.assertEquals(2, events.size());
 
-    List<Map<String, Object>> entities = getJdbcTemplate().queryForList(readAllEntitiesSql());
+    List<Map<String, Object>> entities = getEventuateJdbcStatementExecutor().queryForList(readAllEntitiesSql());
     Assert.assertEquals(1, entities.size());
 
-    List<Map<String, Object>> snapshots = getJdbcTemplate().queryForList(readAllSnapshots());
+    List<Map<String, Object>> snapshots = getEventuateJdbcStatementExecutor().queryForList(readAllSnapshots());
     Assert.assertEquals(1, snapshots.size());
 
     LoadedEvents loadedEvents = getEventuateJdbcAccess().find(testAggregate, saveUpdateResult.getEntityIdVersionAndEventIds().getEntityId(), Optional.empty());
@@ -82,6 +82,6 @@ public abstract class CommonEventuateJdbcAccessImplTest {
   }
 
   protected void executeSql(List<String> sqlList) {
-    getJdbcTemplate().execute(sqlList.stream().collect(Collectors.joining("\n")));
+    getEventuateJdbcStatementExecutor().update(sqlList.stream().collect(Collectors.joining("\n")));
   }
 }
