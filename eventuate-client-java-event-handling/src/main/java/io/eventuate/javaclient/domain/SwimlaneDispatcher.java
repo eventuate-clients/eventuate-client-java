@@ -28,6 +28,10 @@ public class SwimlaneDispatcher {
     this.executor = executor;
   }
 
+  public boolean getRunning() {
+    return running.get();
+  }
+
   public CompletableFuture<?> dispatch(DispatchedEvent<Event> de, Function<DispatchedEvent<Event>, CompletableFuture<?>> target) {
     synchronized (queue) {
       QueuedEvent qe = new QueuedEvent(de, target);
@@ -59,26 +63,29 @@ public class SwimlaneDispatcher {
 
 
   public void processQueuedEvent() {
-    QueuedEvent qe = getNextEvent();
-    if (qe == null)
-      logger.trace("No queued event for {} {}", subscriberId, swimlane);
-    else {
-      logger.trace("Invoking handler for event for {} {} {}", subscriberId, swimlane, qe.event);
-      qe.target.apply(qe.event).handle((success, throwable) -> {
-        if (throwable == null) {
-          logger.debug("Handler succeeded for event for {} {} {}", subscriberId, swimlane, qe.event);
-          boolean x = qe.future.complete(success);
-          logger.trace("Completed future success {}", x);
-          logger.trace("Maybe processing next queued event {} {}", subscriberId, swimlane);
-          processNextQueuedEvent();
-        } else {
-          logger.error(String.format("handler for %s %s  %s failed: ", subscriberId, swimlane, qe.event), throwable);
-          boolean x = qe.future.completeExceptionally(throwable);
-          logger.trace("Completed future failed{}", x);
-          // TODO - what to do here???
-        }
-        return null;
-      });
+    while (true) {
+      QueuedEvent qe = getNextEvent();
+      if (qe == null) {
+        logger.trace("No queued event for {} {}", subscriberId, swimlane);
+        return;
+      }
+      else {
+        logger.trace("Invoking handler for event for {} {} {}", subscriberId, swimlane, qe.event);
+        qe.target.apply(qe.event).handle((success, throwable) -> {
+          if (throwable == null) {
+            logger.debug("Handler succeeded for event for {} {} {}", subscriberId, swimlane, qe.event);
+            boolean x = qe.future.complete(success);
+            logger.trace("Completed future success {}", x);
+            logger.trace("Maybe processing next queued event {} {}", subscriberId, swimlane);
+          } else {
+            logger.error(String.format("handler for %s %s  %s failed: ", subscriberId, swimlane, qe.event), throwable);
+            boolean x = qe.future.completeExceptionally(throwable);
+            logger.trace("Completed future failed{}", x);
+            // TODO - what to do here???
+          }
+          return null;
+        });
+      }
     }
   }
 
