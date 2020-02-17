@@ -8,6 +8,8 @@ import io.eventuate.javaclient.domain.SwimlaneBasedDispatcher;
 import io.eventuate.javaclient.eventhandling.exceptionhandling.EventDeliveryExceptionHandlerManagerImpl;
 import io.eventuate.javaclient.eventhandling.exceptionhandling.EventDeliveryExceptionHandler;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -29,6 +31,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 public class EventDispatcherInitializer {
+  protected Logger logger = LoggerFactory.getLogger(getClass());
 
   private EventHandlerProcessor[] processors;
   private EventuateAggregateStore aggregateStore;
@@ -46,6 +49,7 @@ public class EventDispatcherInitializer {
 
 
   public void registerEventHandler(Object eventHandlerBean, String beanName, Class<?> beanClass) {
+    logger.info("registering event handler: bean: {}, name: {}, class", eventHandlerBean, beanName, beanClass);
 
     List<AccessibleObject> fieldsAndMethods = Stream.<AccessibleObject>concat(Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(beanClass)),
             Arrays.stream(beanClass.getDeclaredFields()))
@@ -104,8 +108,11 @@ public class EventDispatcherInitializer {
               subscriberOptions, de -> swimlaneBasedDispatcher.dispatch(de, eventDispatcher::dispatch)).get(20, TimeUnit.SECONDS);
       subscriptionsRegistry.add(new RegisteredSubscription(subscriberId, aggregatesAndEvents, beanClass));
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
+      logger.error("registering event handler failed", e);
       throw new EventuateSubscriptionFailedException(subscriberId, e);
     }
+
+    logger.info("registered event handler: bean: {}, name: {}, class", eventHandlerBean, beanName, beanClass);
   }
 
   private boolean isExceptionHandlerField(Field f) {

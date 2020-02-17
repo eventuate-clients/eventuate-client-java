@@ -50,10 +50,12 @@ public class EventuateSTOMPClient implements AggregateEvents {
     this.useSsl = uri.getScheme().startsWith("stomp+ssl");
     this.customConnectHeaders = customConnectHeaders;
     if (logger.isInfoEnabled())
-      logger.debug("STOMP connection: " + Arrays.asList(host, port, useSsl));
+      logger.info("STOMP connection: " + Arrays.asList(host, port, useSsl));
   }
 
   public void initialize() {
+    logger.info("Initializing stomp client");
+
     state.status = ConnectionStatus.CONNECTING;
 
     StompClientOptions options = new StompClientOptions();
@@ -67,6 +69,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
       f.setAccessible(true);
       f.set(options, useSsl);
     } catch (NoSuchFieldException | IllegalAccessException e) {
+      logger.error("Initialization of stomp client failed", e);
       throw new RuntimeException(e);
     }
 
@@ -83,7 +86,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
     stompClient.connect(x -> {
       if (x.succeeded()) {
-        logger.debug("Connected!");
+        logger.info("Connected!");
         handleConnectSucceeded(x.result());
       } else {
         logger.error("Connect attempt failed", x.cause());
@@ -108,7 +111,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
   public void handleClose(Void x) {
     if (state.status != ConnectionStatus.CLOSED) {
-      logger.debug("Reconnecting...");
+      logger.info("Reconnecting...");
       state.status = ConnectionStatus.CONNECTING;
       initialize();
     }
@@ -188,6 +191,8 @@ public class EventuateSTOMPClient implements AggregateEvents {
   }
 
   public CompletableFuture<Void> close() {
+    logger.info("closing eventuate stomp client");
+
     CompletableFuture<Void> outcome = new CompletableFuture<>();
     context.runOnContext(x -> {
       switch (state.status) {
@@ -207,6 +212,9 @@ public class EventuateSTOMPClient implements AggregateEvents {
           outcome.completeExceptionally(new UnsupportedOperationException("Do not know what to do with this state: " + state.status));
       }
     });
+
+    logger.info("closed eventuate stomp client");
+
     return outcome;
   }
 
@@ -291,7 +299,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
 
   private void doSubscribe(Subscription sub) {
     if (logger.isInfoEnabled())
-      logger.debug("subscribing  ... " + sub.subscriberId);
+      logger.info("subscribing  ... " + sub.subscriberId);
 
     Map<String, String> headers = new HashMap<>();
     headers.put(Frame.ID, sub.uniqueId);
@@ -300,7 +308,7 @@ public class EventuateSTOMPClient implements AggregateEvents {
     state.connection.subscribe(destination, headers,
             frame -> frameHandler(frame, sub), rh -> {
               if (logger.isInfoEnabled())
-                logger.debug("Subscribed: " + sub.subscriberId);
+                logger.info("Subscribed: " + sub.subscriberId);
               sub.noteSubscribed();
             });
 

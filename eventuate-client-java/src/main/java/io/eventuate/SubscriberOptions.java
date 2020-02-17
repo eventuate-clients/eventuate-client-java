@@ -1,5 +1,7 @@
 package io.eventuate;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 public class SubscriberOptions {
 
   private SubscriberDurability durability;
@@ -27,6 +29,11 @@ public class SubscriberOptions {
 
   public boolean isProgressNotifications() {
     return progressNotifications;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this);
   }
 }
 
