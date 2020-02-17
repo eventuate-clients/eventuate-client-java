@@ -108,7 +108,7 @@ public class EventDispatcherInitializer {
               subscriberOptions, de -> swimlaneBasedDispatcher.dispatch(de, eventDispatcher::dispatch)).get(20, TimeUnit.SECONDS);
       subscriptionsRegistry.add(new RegisteredSubscription(subscriberId, aggregatesAndEvents, beanClass));
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
-      logger.error("registered event handler failed", e);
+      logger.error("registering event handler failed", e);
       throw new EventuateSubscriptionFailedException(subscriberId, e);
     }
 
