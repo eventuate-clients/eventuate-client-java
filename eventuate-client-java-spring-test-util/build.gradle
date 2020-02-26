@@ -3,5 +3,4 @@ apply plugin: PublicModulePlugin
 dependencies {
     compile project(":eventuate-client-java-test-util")
     compile project(":eventuate-client-java-spring")
-
 }

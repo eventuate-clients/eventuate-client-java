@@ -1,6 +1,6 @@
 package io.eventuate.javaclient.jdbc;
 
-import io.eventuate.javaclient.tests.common.spring.AbstractSpringAccountIntegrationReactiveTest;
+import io.eventuate.javaclient.spring.tests.common.AbstractSpringAccountIntegrationReactiveTest;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;

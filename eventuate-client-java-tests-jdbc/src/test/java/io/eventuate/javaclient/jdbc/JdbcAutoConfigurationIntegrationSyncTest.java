@@ -1,7 +1,7 @@
 package io.eventuate.javaclient.jdbc;
 
 import io.eventuate.example.banking.services.counting.InvocationCounter;
-import io.eventuate.javaclient.tests.common.spring.AbstractSpringAccountIntegrationSyncTest;
+import io.eventuate.javaclient.spring.tests.common.AbstractSpringAccountIntegrationSyncTest;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.IntegrationTest;
