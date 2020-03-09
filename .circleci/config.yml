@@ -30,3 +30,8 @@ jobs:
           command: |
             TERM=dumb ./deploy-artifacts.sh
           when: on_success
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build:
