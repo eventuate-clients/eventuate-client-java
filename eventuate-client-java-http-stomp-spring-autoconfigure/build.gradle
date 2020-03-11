@@ -1,3 +1,5 @@
+apply plugin: PublicModulePlugin
+
 dependencies {
     compile project(":eventuate-client-java-http-stomp-spring")
     compile project(":eventuate-client-java-spring-autoconfigure")
