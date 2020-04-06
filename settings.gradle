@@ -29,7 +29,7 @@ include 'eventuate-client-java-tests-common'
 include 'eventuate-client-java-tests-common-spring'
 include 'eventuate-client-java-tests-common-micronaut'
 
-// Temporarily disable
+// Temporarily disable (https://github.com/eventuate-clients/eventuate-client-java/issues/25)
 // include 'eventuate-client-java-tests'
 
 include 'eventuate-client-java-tests-jdbc'
